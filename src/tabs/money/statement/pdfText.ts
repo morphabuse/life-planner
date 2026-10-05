@@ -14,12 +14,25 @@ const SAME_LINE_TOLERANCE = 3
 // Если между кусками промежуток больше этого — ставим пробел.
 const SPACE_GAP = 1
 
+// Воркер создаём один раз и переиспользуем для всех выписок.
+// Запись new Worker(new URL(…), { type: 'module' }) Vite понимает и сам собирает файл воркера.
+let worker: Worker | null = null
+function getWorker(): Worker {
+  worker ??= new Worker(new URL('./pdfWorker.ts', import.meta.url), { type: 'module' })
+  return worker
+}
+
 export async function extractPdfLines(data: ArrayBuffer): Promise<string[]> {
   // pdfjs большой, поэтому грузим его только когда нужно (динамический import).
-  const pdfjs = await import('pdfjs-dist')
-  // Разбор PDF идёт в отдельном потоке (worker); ?url — Vite отдаёт путь к файлу воркера.
-  const { default: workerUrl } = await import('pdfjs-dist/build/pdf.worker.min.mjs?url')
-  pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
+  // Safari на iPhone не знает части новых функций JavaScript, которыми пользуется pdf.js 6,
+  // и выписка там падала с «undefined is not a function». Поэтому:
+  //   1) сначала наши замены (pdfPolyfills.ts),
+  //   2) потом сборка pdf.js «legacy» — в ней остальные новые функции уже заменены.
+  await import('./pdfPolyfills')
+  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
+  // Разбор PDF идёт в отдельном потоке (worker) — в нём нужны те же замены,
+  // поэтому воркер свой (pdfWorker.ts): замены + воркер pdf.js.
+  pdfjs.GlobalWorkerOptions.workerPort = getWorker()
 
   const task = pdfjs.getDocument({ data })
   const pdf = await task.promise
