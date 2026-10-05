@@ -17,6 +17,7 @@ import {
   calcEnvelopes,
   calcLimits,
   dataUntil,
+  addPiggyRecords,
   latestDataMonth,
   lifeCategories,
   merchantKey,
@@ -136,8 +137,10 @@ export function MoneyTab() {
       }),
     }
     setMoney(next)
-    addDeposits(list)
-    showLatestMonth(next, [...savings.deposits, ...list])
+    // addPiggyRecords: если пришёл остаток на начало за более раннюю дату — старый заменяется.
+    const deposits = addPiggyRecords(savings.deposits, list)
+    setSavings((prev) => ({ ...prev, deposits: addPiggyRecords(prev.deposits, list) }))
+    showLatestMonth(next, deposits)
     return { removed: cleaned.removed }
   }
 

@@ -149,7 +149,10 @@ export function calcEnvelopes(money: MoneyData, deposits: Deposit[], prefix: str
     .filter(([category]) => category !== CATEGORY_CLOTHES)
     .reduce((sum, [, value]) => sum + value, 0)
   // Конверт «Турция» связан с копилкой: «отложено» = пополнения копилки за месяц.
-  const saved = deposits.filter((d) => inMonth(d.date, prefix)).reduce((s, d) => s + d.amount, 0)
+  // Остаток на начало выписки — не пополнение этого месяца, его не считаем.
+  const saved = deposits
+    .filter((d) => inMonth(d.date, prefix) && !isOpeningRecord(d))
+    .reduce((s, d) => s + d.amount, 0)
 
   const envelope = (percent: number, used: number): Envelope => {
     const planned = (income * percent) / 100
@@ -285,17 +288,55 @@ export interface PiggyCandidate {
   key: string
   date: string
   amount: number // рубли со знаком: + пополнение / проценты, − снятие
-  kind: 'transfer' | 'withdrawal' | 'interest' // перевод на счёт, снятие со счёта, проценты
+  // перевод на счёт, снятие со счёта, проценты, остаток на начало периода выписки
+  kind: 'transfer' | 'withdrawal' | 'interest' | 'opening'
   already: boolean // уже есть в копилке
 }
 
+// Ключ записи «остаток на начало выписки»: 'opening|счёт|дата'.
+export function openingKey(account: string, date: string): string {
+  return `opening|${account}|${date}`
+}
+
+export interface StatementOpening {
+  account: string
+  date: string // начало периода выписки
+  amountKop: number // «Входящий остаток»
+}
+
+// Запись «остаток на начало выписки» — это деньги, которые были на счёте ДО периода,
+// а не пополнение в этот день. В «отложено за месяц/неделю» её не считаем.
+export function isOpeningRecord(d: Deposit): boolean {
+  return d.importKey?.startsWith('opening|') ?? false
+}
+
 // Выписка счёта копилки (накопительного): что идёт в копилку —
-// входящие «Переводы собственных средств» (пополнение), исходящие (снятие, с минусом)
-// и проценты, начисленные на этот счёт.
-export function piggyCandidates(ops: IncomingOperation[], deposits: Deposit[]): PiggyCandidate[] {
+// остаток на начало периода, входящие «Переводы собственных средств» (пополнение),
+// исходящие (снятие, с минусом) и проценты, начисленные на этот счёт.
+export function piggyCandidates(
+  ops: IncomingOperation[],
+  deposits: Deposit[],
+  opening?: StatementOpening | null,
+): PiggyCandidate[] {
   // Старые записи копилки хранят ключ без счёта — узнаём и их.
   const imported = new Set(deposits.map((d) => d.importKey).filter(Boolean))
   const result: PiggyCandidate[] = []
+
+  // Остаток на начало: выписка взята не с открытия счёта — деньги, которые уже лежали
+  // на счёте, без этой записи в копилку не попадут. Не предлагаем, если он уже учтён:
+  // в копилке есть записи из выписок раньше начала периода или остаток на более раннюю дату.
+  if (opening && opening.amountKop > 0) {
+    const prefix = `opening|${opening.account}|`
+    const coveredEarlier = deposits.some(
+      (d) => d.importKey && d.date < opening.date &&
+        (!d.importKey.startsWith('opening|') || d.importKey.startsWith(prefix)),
+    )
+    if (!coveredEarlier) {
+      const key = openingKey(opening.account, opening.date)
+      result.push({ key, date: opening.date, amount: opening.amountKop / 100, kind: 'opening', already: imported.has(key) })
+    }
+  }
+
   for (const op of ops) {
     let kind: PiggyCandidate['kind'] | null = null
     if (/Перевод собственных средств/iu.test(op.purpose)) {
@@ -309,6 +350,20 @@ export function piggyCandidates(ops: IncomingOperation[], deposits: Deposit[]): 
     result.push({ key, date: op.date, amount: op.amount / 100, kind, already })
   }
   return result
+}
+
+// Добавляет записи из выписки в копилку. Если среди них остаток на начало периода,
+// прежний остаток того же счёта на БОЛЕЕ ПОЗДНЮЮ дату убираем: загружена выписка
+// за более ранний период, и её операции уже содержат те деньги — иначе посчитаются дважды.
+export function addPiggyRecords(deposits: Deposit[], list: Deposit[]): Deposit[] {
+  let kept = deposits
+  for (const record of list) {
+    const m = /^opening\|([^|]*)\|/u.exec(record.importKey ?? '')
+    if (!m) continue
+    const prefix = `opening|${m[1]}|`
+    kept = kept.filter((d) => !(d.importKey?.startsWith(prefix) && d.date > record.date))
+  }
+  return [...kept, ...list]
 }
 
 // ---------- Счета и «данные по …» ----------

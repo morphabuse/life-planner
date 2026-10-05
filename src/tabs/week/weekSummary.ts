@@ -1,7 +1,7 @@
 // Итог недели: собираем цифры из «Смен», «Денег», задач и привычек.
 // Своих расчётов почти нет — вызываем логику других вкладок, ничего не дублируем.
 import type { Deposit, HabitsData, MoneyData, ShiftsData, WeekData } from '../../types'
-import { incomeBetween, missedCost } from '../money/moneyLogic'
+import { incomeBetween, isOpeningRecord, missedCost } from '../money/moneyLogic'
 import {
   AUTO_SHIFTS_NAME,
   countInRange,
@@ -51,7 +51,10 @@ export function weekSummary(
   }
 
   const tasks = dates.flatMap((d) => data.week.tasks[d] ?? [])
-  const saved = data.deposits.filter((d) => inWeek(d.date)).reduce((s, d) => s + d.amount, 0)
+  // Остаток на начало выписки — не пополнение этой недели.
+  const saved = data.deposits
+    .filter((d) => inWeek(d.date) && !isOpeningRecord(d))
+    .reduce((s, d) => s + d.amount, 0)
 
   const habits: HabitWeek[] = data.habits.habits
     .filter((h) => !h.archived)

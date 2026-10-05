@@ -10,6 +10,7 @@ import { FileUp } from 'lucide-react'
 import { Button, Card } from '../../components/ui'
 import type { AccountInfo, Deposit, Transaction } from '../../types'
 import { mergeTransactions, piggyCandidates, statementOperations } from './moneyLogic'
+import type { StatementOpening } from './moneyLogic'
 import type { PiggyCandidate } from './moneyLogic'
 import { formatDate, formatMoneyExact, formatSigned, plural } from './format'
 import { parseStatementLines } from './statement/parseStatement'
@@ -42,6 +43,15 @@ const CANDIDATE_LABEL: Record<PiggyCandidate['kind'], string> = {
   transfer: 'пополнение',
   withdrawal: 'снятие',
   interest: 'проценты',
+  opening: 'остаток на начало выписки',
+}
+
+// «Входящий остаток» выписки — деньги, что лежали на счёте до начала периода.
+// Дата — начало периода (или первая операция, если периода в шапке нет).
+function statementOpening(parsed: ParsedStatement): StatementOpening | null {
+  if (parsed.openingKop === null) return null
+  const date = parsed.periodStart ?? [...parsed.operations].map((o) => o.date).sort()[0]
+  return date ? { account: parsed.account, date, amountKop: parsed.openingKop } : null
 }
 
 export function StatementImportCard({
@@ -68,7 +78,7 @@ export function StatementImportCard({
       const lines = await extractPdfLines(await file.arrayBuffer())
       const parsed = parseStatementLines(lines)
       // Новые (ещё не добавленные) записи копилки отмечаем сразу.
-      const candidates = piggyCandidates(statementOperations(parsed), deposits)
+      const candidates = piggyCandidates(statementOperations(parsed), deposits, statementOpening(parsed))
       setChecked(new Set(candidates.filter((c) => !c.already).map((c) => c.key)))
       // Знакомый счёт — берём запомненный тип, иначе — определённый по содержимому.
       const kind = accounts[parsed.account]?.kind ?? parsed.kind
@@ -270,7 +280,7 @@ function SavingsPreview(props: {
 }) {
   const { parsed, deposits, savedTotal, checked, blocked } = props
   const ops = statementOperations(parsed)
-  const candidates = piggyCandidates(ops, deposits)
+  const candidates = piggyCandidates(ops, deposits, statementOpening(parsed))
   const fresh = candidates.filter((c) => !c.already)
   const selected = fresh.filter((c) => checked.has(c.key))
   const selectedSum = selected.reduce((s, c) => s + c.amount, 0)
@@ -283,6 +293,7 @@ function SavingsPreview(props: {
   const tIn = totals('transfer')
   const tOut = totals('withdrawal')
   const tInterest = totals('interest')
+  const tOpening = totals('opening')
 
   // Сверка: сколько станет в копилке и сколько на счёте по выписке (в копейках, без ошибок дробей).
   const afterKop = Math.round(savedTotal * 100) + Math.round(selectedSum * 100)
@@ -307,7 +318,7 @@ function SavingsPreview(props: {
           <p className={styles.importSummary}>
             {fresh.length === 0
               ? 'Всё из этой выписки уже в копилке.'
-              : `Новое для копилки: пополнений ${tIn.count} (${formatSigned(tIn.sum)}), снятий ${tOut.count} (${formatSigned(tOut.sum)}), процентов ${tInterest.count} (${formatSigned(tInterest.sum)}). Сними галочку, если что-то не нужно.`}
+              : `Новое для копилки: пополнений ${tIn.count} (${formatSigned(tIn.sum)}), снятий ${tOut.count} (${formatSigned(tOut.sum)}), процентов ${tInterest.count} (${formatSigned(tInterest.sum)})${tOpening.count > 0 ? `, остаток на начало выписки ${formatSigned(tOpening.sum)} — деньги, что были на счёте до её первой даты` : ''}. Сними галочку, если что-то не нужно.`}
           </p>
           <ul className={styles.candidates}>
             {candidates.map((c) => (

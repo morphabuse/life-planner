@@ -29,6 +29,7 @@ export interface StatementCheck {
 export interface ParsedStatement {
   kind: StatementKind // тип выписки, определённый по содержимому
   account: string // номер лицевого счёта из шапки ('' — не нашёлся)
+  periodStart: string | null // 'YYYY-MM-DD' — начало периода выписки
   periodEnd: string | null // 'YYYY-MM-DD' — конец периода выписки
   operations: StatementOperation[]
   creditKop: number // сумма зачислений по операциям
@@ -206,10 +207,12 @@ export function parseStatementLines(rawLines: string[]): ParsedStatement {
   const header = firstOp === -1 ? textLines : textLines.slice(0, firstOp)
   const account = findAccount(header)
   const periodEnd = findPeriodEnd(header)
+  const periodStart = findPeriodStart(header)
 
   return {
     kind: detectKind(operations, header),
     account,
+    periodStart,
     periodEnd,
     operations,
     creditKop,
@@ -246,6 +249,16 @@ function findAccount(header: string[]): string {
 }
 
 // «Период выписки: 04.07.2026 – 04.10.2026» → '2026-10-04' (вторая дата).
+// «Период: 04.07.2026 – 04.10.2026» → '2026-07-04' (первая дата в строке «Период…»).
+function findPeriodStart(header: string[]): string | null {
+  for (const line of header) {
+    if (!/^Период/iu.test(line)) continue
+    const first = /(\d{2})\.(\d{2})\.(\d{4})/u.exec(line)
+    if (first) return `${first[3]}-${first[2]}-${first[1]}`
+  }
+  return null
+}
+
 function findPeriodEnd(header: string[]): string | null {
   for (const line of header) {
     if (!/^Период/iu.test(line)) continue
