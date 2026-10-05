@@ -1,30 +1,37 @@
 // Загрузка PDF-выписки Ozon Банка: большая зона «перетащи файл сюда», чтение,
 // сверка с итогами, предпросмотр и импорт.
-//   выписка карты           → операции попадают в «Операции по карте» (без дублей);
-//   выписка накопительного  → пополнения, снятия и проценты идут в копилку,
-//                             «Исходящий остаток» сверяется с суммой копилки.
-// Тип выписки: если счёт уже встречался — берём запомненный, иначе определяем по содержимому.
+//
+// Какой это счёт, определяется по номеру лицевого счёта из шапки: знакомый счёт —
+// берём запомненный тип; новый — спрашиваем («Карта», «Жизнь», «Турция»,
+// «Одежда и уход» или «Другой») и запоминаем.
+//   карта            → операции (траты и доход за смены), доходы сверяются с введёнными
+//                      вручную, смены с доходом отмечаются в «Сменах»;
+//   счета-конверты   → операции и остатки (рост «Турции», «можно потратить», сверка переводов);
+//   другой           → только запоминаем, что счёт не учитывается.
 import { useRef, useState } from 'react'
 import type { ChangeEvent, DragEvent } from 'react'
-import { FileUp } from 'lucide-react'
-import { Button, Card } from '../../components/ui'
-import type { AccountInfo, Deposit, Transaction } from '../../types'
-import { mergeTransactions, piggyCandidates, statementOperations } from './moneyLogic'
-import type { StatementOpening } from './moneyLogic'
-import type { PiggyCandidate } from './moneyLogic'
+import { Check, FileUp } from 'lucide-react'
+import { Badge, Button, Card } from '../../components/ui'
+import type { AccountKind, MoneyData, ShiftsData } from '../../types'
+import { formatDayShort } from '../../utils/date'
+import {
+  ACCOUNT_LABELS,
+  incomeShiftDates,
+  mergeTransactions,
+  shiftIncomes,
+  statementOperations,
+} from './moneyLogic'
 import { formatDate, formatMoneyExact, formatSigned, plural } from './format'
 import { parseStatementLines } from './statement/parseStatement'
-import type { ParsedStatement, StatementKind } from './statement/parseStatement'
+import type { ParsedStatement } from './statement/parseStatement'
 import { extractPdfLines } from './statement/pdfText'
 import styles from './MoneyTab.module.css'
 
 interface Props {
-  transactions: Transaction[]
-  deposits: Deposit[]
-  accounts: Record<string, AccountInfo>
-  savedTotal: number // сколько сейчас в копилке, ₽
-  onImportCard: (parsed: ParsedStatement) => { added: number; updated: number; duplicates: number }
-  onImportSavings: (parsed: ParsedStatement, deposits: Deposit[]) => { removed: number }
+  money: MoneyData
+  shifts: ShiftsData
+  // Загрузить выписку как счёт kind. Возвращает текст итога для сообщения.
+  onImport: (parsed: ParsedStatement, kind: AccountKind) => string
 }
 
 type Message = { kind: 'ok' | 'error'; text: string }
@@ -32,39 +39,18 @@ type Message = { kind: 'ok' | 'error'; text: string }
 type State =
   | { step: 'idle'; message?: Message }
   | { step: 'reading'; fileName: string }
-  | { step: 'preview'; fileName: string; parsed: ParsedStatement; kind: StatementKind }
+  // kind = null — счёт новый, и я ещё не выбрал, какой это.
+  | { step: 'preview'; fileName: string; parsed: ParsedStatement; kind: AccountKind | null }
+
+const KIND_ORDER: AccountKind[] = ['card', 'life', 'turkey', 'clothes', 'other']
 
 // '40817810000000000000' → '··0000' — коротко, как номер карты.
 function shortAccount(account: string): string {
   return account ? `··${account.slice(-4)}` : 'без номера'
 }
 
-const CANDIDATE_LABEL: Record<PiggyCandidate['kind'], string> = {
-  transfer: 'пополнение',
-  withdrawal: 'снятие',
-  interest: 'проценты',
-  opening: 'остаток на начало выписки',
-}
-
-// «Входящий остаток» выписки — деньги, что лежали на счёте до начала периода.
-// Дата — начало периода (или первая операция, если периода в шапке нет).
-function statementOpening(parsed: ParsedStatement): StatementOpening | null {
-  if (parsed.openingKop === null) return null
-  const date = parsed.periodStart ?? [...parsed.operations].map((o) => o.date).sort()[0]
-  return date ? { account: parsed.account, date, amountKop: parsed.openingKop } : null
-}
-
-export function StatementImportCard({
-  transactions,
-  deposits,
-  accounts,
-  savedTotal,
-  onImportCard,
-  onImportSavings,
-}: Props) {
+export function StatementImportCard({ money, shifts, onImport }: Props) {
   const [state, setState] = useState<State>({ step: 'idle' })
-  // Какие записи отмечены для копилки (по ключу операции).
-  const [checked, setChecked] = useState<Set<string>>(new Set())
   const [dragOver, setDragOver] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -77,11 +63,8 @@ export function StatementImportCard({
     try {
       const lines = await extractPdfLines(await file.arrayBuffer())
       const parsed = parseStatementLines(lines)
-      // Новые (ещё не добавленные) записи копилки отмечаем сразу.
-      const candidates = piggyCandidates(statementOperations(parsed), deposits, statementOpening(parsed))
-      setChecked(new Set(candidates.filter((c) => !c.already).map((c) => c.key)))
-      // Знакомый счёт — берём запомненный тип, иначе — определённый по содержимому.
-      const kind = accounts[parsed.account]?.kind ?? parsed.kind
+      // Знакомый счёт — берём запомненный тип. Новый — спросим.
+      const kind = money.accounts[parsed.account]?.kind ?? null
       setState({ step: 'preview', fileName: file.name, parsed, kind })
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error)
@@ -132,8 +115,8 @@ export function StatementImportCard({
         <FileUp size={18} className={styles.dropIcon} aria-hidden="true" />
         <p className={styles.dropTitle}>Перетащи PDF выписки сюда или выбери файл</p>
         <p className={styles.caption}>
-          Выписка Ozon Банка — карты или накопительного счёта. Файл читается прямо в браузере и никуда не
-          отправляется.
+          Выписка Ozon Банка — карты или счёта «Жизнь», «Турция», «Одежда и уход». Файл читается прямо в
+          браузере и никуда не отправляется.
         </p>
         <Button size="sm" onClick={pickFile} disabled={state.step === 'reading'}>
           Выбрать файл
@@ -156,13 +139,16 @@ export function StatementImportCard({
   const { parsed, kind, fileName } = state
   const blocked = parsed.check.status === 'mismatch' || parsed.check.status === 'empty'
   const checkClass = parsed.check.status === 'ok' ? styles.okText : blocked ? styles.error : styles.caption
-  const known = accounts[parsed.account]
+  const known = money.accounts[parsed.account]
   const close = (message?: Message) => setState({ step: 'idle', message })
+  // Без номера счёта выписку можно загрузить только как карту: иначе её не к чему привязать.
+  const noNumber = !parsed.account && kind !== null && kind !== 'card'
 
   let kindHint: string
-  if (!parsed.account) kindHint = 'Номер счёта в шапке не нашёлся — тип определён по содержимому.'
-  else if (known) kindHint = `Счёт ${shortAccount(parsed.account)} уже знаком — тип запомнен.`
-  else kindHint = `Счёт ${shortAccount(parsed.account)} — новый, тип определён по содержимому. Запомню его.`
+  const guess = parsed.kind === 'savings' ? 'накопительный счёт' : 'счёт карты'
+  if (!parsed.account) kindHint = 'Номер счёта в шапке не нашёлся.'
+  else if (known) kindHint = `Счёт ${shortAccount(parsed.account)} уже знаком — тип запомнен (можно поменять).`
+  else kindHint = `Счёт ${shortAccount(parsed.account)} — новый. Какой это? По операциям похоже на ${guess}. Запомню.`
 
   const period = parsed.periodEnd ? ` · по ${formatDate(parsed.periodEnd)}` : ''
 
@@ -179,13 +165,12 @@ export function StatementImportCard({
       {hiddenInput}
 
       <div className={styles.importKind}>
-        <span className={styles.caption}>Тип выписки:</span>
-        <Button size="sm" aria-pressed={kind === 'card'} onClick={() => setState({ ...state, kind: 'card' })}>
-          Карта
-        </Button>
-        <Button size="sm" aria-pressed={kind === 'savings'} onClick={() => setState({ ...state, kind: 'savings' })}>
-          Накопительный счёт
-        </Button>
+        <span className={styles.caption}>Это счёт:</span>
+        {KIND_ORDER.map((k) => (
+          <Button key={k} size="sm" aria-pressed={kind === k} onClick={() => setState({ ...state, kind: k })}>
+            {k === 'other' ? 'Другой' : ACCOUNT_LABELS[k]}
+          </Button>
+        ))}
       </div>
       <p className={styles.caption}>{kindHint}</p>
 
@@ -193,187 +178,128 @@ export function StatementImportCard({
         {parsed.check.message}
       </p>
 
-      {kind === 'card' ? (
-        <CardPreview
-          parsed={parsed}
-          transactions={transactions}
-          blocked={blocked}
-          onImport={() => {
-            const { added, updated, duplicates } = onImportCard(parsed)
-            let text = `Карта ${shortAccount(parsed.account)}: новых операций ${added}.`
-            if (updated > 0) text += ` Обновлено: ${updated}.`
-            if (duplicates > 0) text += ` Без изменений: ${duplicates}.`
-            close({ kind: 'ok', text })
-          }}
-          onCancel={() => close()}
-        />
+      {kind === null ? (
+        <p className={styles.importSummary}>Выбери, какой это счёт, — и появится, что загрузится.</p>
+      ) : kind === 'card' ? (
+        <CardPreview parsed={parsed} money={money} shifts={shifts} />
+      ) : kind === 'other' ? (
+        <p className={styles.importSummary}>
+          Этот счёт не учитывается: запомню его как «другой», операции не сохраняю. Переводы с него и так видны в
+          выписке карты.
+        </p>
       ) : (
-        <SavingsPreview
-          parsed={parsed}
-          deposits={deposits}
-          savedTotal={savedTotal}
-          checked={checked}
-          setChecked={setChecked}
-          blocked={blocked}
-          onImport={(list) => {
-            const { removed } = onImportSavings(parsed, list)
-            const sum = list.reduce((s, d) => s + d.amount, 0)
-            let text =
-              list.length > 0
-                ? `В копилку: ${list.length} ${plural(list.length, 'запись', 'записи', 'записей')} на ${formatSigned(sum)}.`
-                : 'Новых записей для копилки нет, остаток счёта запомнен.'
-            if (removed > 0) text += ` Убрано старых копий из операций карты: ${removed}.`
-            close({ kind: 'ok', text })
-          }}
-          onCancel={() => close()}
-        />
+        <EnvelopePreview parsed={parsed} money={money} kind={kind} />
       )}
+      {noNumber && <p className={styles.error}>Номер счёта не нашёлся — такую выписку можно загрузить только как карту.</p>}
+
+      <div className={styles.buttons}>
+        <Button
+          variant="primary"
+          disabled={blocked || kind === null || noNumber}
+          onClick={() => kind && close({ kind: 'ok', text: onImport(parsed, kind) })}
+        >
+          {kind === 'other' ? 'Запомнить счёт' : 'Загрузить'}
+        </Button>
+        <Button variant="text" onClick={() => close()}>
+          Отмена
+        </Button>
+      </div>
     </Card>
   )
 }
 
 // ---------- Выписка карты ----------
 
-function CardPreview(props: {
-  parsed: ParsedStatement
-  transactions: Transaction[]
-  blocked: boolean
-  onImport: () => void
-  onCancel: () => void
-}) {
-  const { parsed, transactions, blocked } = props
-  // Сколько операций новых — «пробный» merge без сохранения.
+function CardPreview({ parsed, money, shifts }: { parsed: ParsedStatement; money: MoneyData; shifts: ShiftsData }) {
+  // «Пробная» загрузка без сохранения: сколько операций новых и что будет с доходами.
   const ops = statementOperations(parsed)
-  const preview = mergeTransactions(transactions, ops)
-  const changes = preview.added + preview.updated
+  const merged = mergeTransactions(money.transactions, ops)
+  const trial: MoneyData = {
+    ...money,
+    transactions: merged.transactions,
+    accounts: parsed.account
+      ? { ...money.accounts, [parsed.account]: { ...(money.accounts[parsed.account] ?? { balances: [] }), kind: 'card' } }
+      : money.accounts,
+  }
+  const opsWithIds = ops.map((o) => ({ ...o, id: '' }))
+  const dates = new Set(incomeShiftDates(opsWithIds, trial))
+  const incomes = shiftIncomes(trial).filter((i) => dates.has(i.shiftDate))
+  const matched = incomes.filter((i) => i.status === 'ok').length
+  const toAdd = incomes.filter((i) => i.status === 'statement')
+  const toCheck = incomes.filter((i) => i.status === 'check')
+  const toMark = [...dates].filter((d) => !shifts.days[d])
 
   return (
     <>
       <p className={styles.importSummary}>
-        Операций в выписке: {parsed.operations.length}. Новых: {preview.added}
-        {preview.updated > 0 && `, обновятся: ${preview.updated}`}
-        {preview.duplicates > 0 && `, без изменений: ${preview.duplicates}`}.
+        Операций в выписке: {parsed.operations.length}. Новых: {merged.added}
+        {merged.updated > 0 && `, обновятся: ${merged.updated}`}
+        {merged.duplicates > 0 && `, без изменений: ${merged.duplicates}`}.
       </p>
-      <div className={styles.buttons}>
-        <Button variant="primary" onClick={props.onImport} disabled={blocked || changes === 0}>
-          Загрузить {changes}
-        </Button>
-        <Button variant="text" onClick={props.onCancel}>
-          Отмена
-        </Button>
-      </div>
+      {incomes.length > 0 && (
+        <div className={styles.importIncomes}>
+          <p>
+            Доход за {incomes.length} {plural(incomes.length, 'смену', 'смены', 'смен')}:{' '}
+            {matched > 0 && (
+              <Badge tone="accent" icon={<Check size={12} />}>
+                {matched} сходится с введёнными
+              </Badge>
+            )}{' '}
+            {toAdd.length > 0 && <Badge tone="neutral">добавится {toAdd.length}</Badge>}{' '}
+            {toCheck.length > 0 && <Badge tone="danger">проверь {toCheck.length}</Badge>}
+          </p>
+          {toCheck.map((i) => (
+            <p key={i.shiftDate} className={styles.error}>
+              Смена {formatDayShort(i.shiftDate)}: ввёл {formatMoneyExact((i.manualKop ?? 0) / 100)}, по выписке{' '}
+              {formatMoneyExact((i.statementKop ?? 0) / 100)} — после загрузки возьмётся сумма из выписки, введённую
+              можно убрать.
+            </p>
+          ))}
+          {toMark.length > 0 && (
+            <p className={styles.caption}>
+              В «Сменах» отмечу как смену {toMark.length} {plural(toMark.length, 'день', 'дня', 'дней')}, где доход
+              пришёл, а смена не отмечена.
+            </p>
+          )}
+        </div>
+      )}
     </>
   )
 }
 
-// ---------- Выписка накопительного ----------
+// ---------- Выписка счёта-конверта ----------
 
-function SavingsPreview(props: {
-  parsed: ParsedStatement
-  deposits: Deposit[]
-  savedTotal: number
-  checked: Set<string>
-  setChecked: (update: (prev: Set<string>) => Set<string>) => void
-  blocked: boolean
-  onImport: (deposits: Deposit[]) => void
-  onCancel: () => void
-}) {
-  const { parsed, deposits, savedTotal, checked, blocked } = props
+function EnvelopePreview({ parsed, money, kind }: { parsed: ParsedStatement; money: MoneyData; kind: AccountKind }) {
   const ops = statementOperations(parsed)
-  const candidates = piggyCandidates(ops, deposits, statementOpening(parsed))
-  const fresh = candidates.filter((c) => !c.already)
-  const selected = fresh.filter((c) => checked.has(c.key))
-  const selectedSum = selected.reduce((s, c) => s + c.amount, 0)
-
-  // Итоги по видам — чтобы не читать длинный список.
-  const totals = (kind: PiggyCandidate['kind']) => {
-    const list = fresh.filter((c) => c.kind === kind)
-    return { count: list.length, sum: list.reduce((s, c) => s + c.amount, 0) }
+  const merged = mergeTransactions(money.transactions, ops)
+  let inKop = 0
+  let outKop = 0
+  let interestKop = 0
+  for (const op of ops) {
+    if (/(?:Выплата|Начисление) процентов|Капитализация/iu.test(op.purpose)) interestKop += op.amount
+    else if (op.amount > 0) inKop += op.amount
+    else outKop += op.amount
   }
-  const tIn = totals('transfer')
-  const tOut = totals('withdrawal')
-  const tInterest = totals('interest')
-  const tOpening = totals('opening')
-
-  // Сверка: сколько станет в копилке и сколько на счёте по выписке (в копейках, без ошибок дробей).
-  const afterKop = Math.round(savedTotal * 100) + Math.round(selectedSum * 100)
-  const closing = parsed.closingKop
-  const diffKop = closing === null ? null : afterKop - closing
-
-  function toggle(key: string) {
-    props.setChecked((prev) => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
-  }
+  // Сходятся ли остатки с операциями: входящий + операции = исходящий.
+  const opsSum = ops.reduce((s, o) => s + o.amount, 0)
+  const consistent =
+    parsed.openingKop !== null && parsed.closingKop !== null ? parsed.openingKop + opsSum === parsed.closingKop : null
 
   return (
     <>
-      {candidates.length === 0 ? (
-        <p className={styles.importSummary}>Переводов собственных средств и процентов в выписке нет.</p>
-      ) : (
-        <>
-          <p className={styles.importSummary}>
-            {fresh.length === 0
-              ? 'Всё из этой выписки уже в копилке.'
-              : `Новое для копилки: пополнений ${tIn.count} (${formatSigned(tIn.sum)}), снятий ${tOut.count} (${formatSigned(tOut.sum)}), процентов ${tInterest.count} (${formatSigned(tInterest.sum)})${tOpening.count > 0 ? `, остаток на начало выписки ${formatSigned(tOpening.sum)} — деньги, что были на счёте до её первой даты` : ''}. Сними галочку, если что-то не нужно.`}
-          </p>
-          <ul className={styles.candidates}>
-            {candidates.map((c) => (
-              <li key={c.key}>
-                <label className={styles.candidate}>
-                  <input
-                    type="checkbox"
-                    checked={c.already || checked.has(c.key)}
-                    disabled={c.already}
-                    onChange={() => toggle(c.key)}
-                  />
-                  <span className={styles.txDate}>{formatDate(c.date)}</span>
-                  <span className={c.amount > 0 ? styles.candidateAmount : styles.candidateMinus}>
-                    {formatSigned(c.amount)}
-                  </span>
-                  <span className={styles.caption}>
-                    {CANDIDATE_LABEL[c.kind]}
-                    {c.already && ' · уже в копилке'}
-                  </span>
-                </label>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-
-      {closing === null ? (
-        <p className={`${styles.caption} ${styles.importCheck}`}>
-          В выписке нет «Исходящего остатка» — сверить копилку со счётом не получится.
-        </p>
-      ) : (
-        <p className={`${diffKop === 0 ? styles.okText : styles.error} ${styles.importCheck}`} role="status">
-          На счёте по выписке: {formatMoneyExact(closing / 100)}. В копилке будет: {formatMoneyExact(afterKop / 100)}
-          {diffKop === 0
-            ? ' — сходится.'
-            : ` — расхождение ${formatSigned((diffKop ?? 0) / 100)} (ручные записи или операции вне периода выписки).`}
+      <p className={styles.importSummary}>
+        Счёт «{ACCOUNT_LABELS[kind]}». Операций: {parsed.operations.length}, новых: {merged.added}
+        {merged.updated > 0 && `, обновятся: ${merged.updated}`}. Пришло {formatSigned(inKop / 100)}, ушло{' '}
+        {formatSigned(outKop / 100)}, проценты {formatSigned(interestKop / 100)}.
+      </p>
+      {parsed.closingKop !== null && (
+        <p className={`${consistent === false ? styles.error : styles.caption} ${styles.importCheck}`}>
+          Остаток на конец: {formatMoneyExact(parsed.closingKop / 100)}
+          {parsed.periodEnd && ` (${formatDate(parsed.periodEnd)})`}
+          {consistent === true && ' — сходится с операциями.'}
+          {consistent === false && ' — не сходится с входящим остатком и операциями, проверь выписку.'}
         </p>
       )}
-
-      <div className={styles.buttons}>
-        <Button
-          variant="primary"
-          disabled={blocked}
-          onClick={() =>
-            props.onImport(
-              selected.map((c) => ({ id: crypto.randomUUID(), date: c.date, amount: c.amount, importKey: c.key })),
-            )
-          }
-        >
-          {selected.length > 0 ? `В копилку: ${selected.length} на ${formatSigned(selectedSum)}` : 'Запомнить остаток'}
-        </Button>
-        <Button variant="text" onClick={props.onCancel}>
-          Отмена
-        </Button>
-      </div>
     </>
   )
 }

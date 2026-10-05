@@ -5,7 +5,6 @@ import type { WeekData } from '../../types'
 import { loadWeek, saveWeek } from '../../storage/weekStorage'
 import { loadShifts } from '../../storage/shiftsStorage'
 import { loadMoney } from '../../storage/moneyStorage'
-import { loadSavings } from '../../storage/savingsStorage'
 import { loadHabits } from '../../storage/habitsStorage'
 import { addDays, formatDateRange, todayIso, weekdayMondayFirst } from '../../utils/date'
 import { getEntry } from '../shifts/schedule'
@@ -25,9 +24,8 @@ export function WeekTab() {
   const [today] = useState(todayIso)
   // Понедельник показанной недели.
   const [monday, setMonday] = useState(() => weekStartOf(today))
-  // Для итога недели: деньги, копилку и привычки только читаем.
+  // Для итога недели: деньги и привычки только читаем.
   const [money] = useState(loadMoney)
-  const [savings] = useState(loadSavings)
   const [habits] = useState(loadHabits)
   // Итог недели показываем сам в воскресенье, в остальные дни — по кнопке.
   const [showReview, setShowReview] = useState(() => weekdayMondayFirst(today) === 6)
@@ -91,7 +89,7 @@ export function WeekTab() {
       {/* Итог следует за выбранной неделей — так можно листать прошлые итоги. */}
       {showReview && (
         <WeekReviewCard
-          summary={weekSummary(monday, today, { week: data, shifts, money, deposits: savings.deposits, habits })}
+          summary={weekSummary(monday, today, { week: data, shifts, money, habits })}
           review={data.reviews[monday] ?? { good: '', bad: '' }}
           onChange={(review) => setData((prev) => setReview(prev, monday, review))}
           onClose={() => setShowReview(false)}

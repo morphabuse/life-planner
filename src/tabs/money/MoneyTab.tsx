@@ -1,49 +1,57 @@
-// Вкладка «Деньги»: копилка на Турцию, конверты зарплаты, лимиты, операции из выписок.
-// Здесь живёт состояние (копилка + деньги), остальное — дочерние компоненты.
-//
-// Порядок на экране:
-//   цель и прогресс копилки → зона загрузки выписки → месяц (конверты, лимиты, операции)
-//   → свёрнутые блоки: «Пополнить вручную», «История копилки», «Настройки».
-// Пока данных нет — вместо месяца карточка-инструкция «С чего начать».
+// Вкладка «Деньги». Два режима: «Турция» (цель и прогноз) и «Месяц» (остатки, доход за смены,
+// переводы по счетам, траты). Настройки — за шестерёнкой. Внизу — зона загрузки выписок.
+// Здесь живёт состояние «Денег»; «Смены» читаем для прогноза и отмечаем смену,
+// если за неё пришёл доход, а она не отмечена.
 import { useEffect, useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import type { AccountInfo, Deposit, MoneyData, SavingsData, SavingsGoal, Transaction } from '../../types'
-import { loadSavings, saveSavings } from '../../storage/savingsStorage'
+import { ChevronLeft, ChevronRight, Settings, X } from 'lucide-react'
+import type {
+  AccountInfo,
+  AccountKind,
+  BalanceKind,
+  BalanceSnapshot,
+  EnvelopeKind,
+  MoneyData,
+  MoneySettings,
+  ShiftsData,
+  Transaction,
+} from '../../types'
 import { loadMoney, saveMoney } from '../../storage/moneyStorage'
-import { Button, Collapsible } from '../../components/ui'
-import { calcSummary } from './savingsMath'
+import { loadShifts, saveShifts } from '../../storage/shiftsStorage'
+import { Button, Card } from '../../components/ui'
+import { addDays, todayIso } from '../../utils/date'
+import { DEFAULT_SHIFT_TIME } from '../../utils/shiftTime'
 import {
+  ACCOUNT_LABELS,
   allCategories,
-  calcEnvelopes,
-  calcLimits,
+  categorySpending,
   dataUntil,
-  addPiggyRecords,
+  incomeShiftDates,
   latestDataMonth,
-  lifeCategories,
   merchantKey,
   mergeTransactions,
+  monthAnalytics,
   monthPrefix,
   removeSavingsCopies,
-  savingsBalance,
-  shiftsToGoal,
+  shiftIncomes,
+  spendingCategories,
   statementOperations,
-  turkeyPerShift,
 } from './moneyLogic'
+import { turkeyForecast } from './turkeyLogic'
 import type { ParsedStatement } from './statement/parseStatement'
-import { GoalCard } from './GoalCard'
-import { SavingsSummary } from './SavingsSummary'
-import { EnvelopesCard } from './EnvelopesCard'
+import { TurkeyCard } from './TurkeyCard'
+import { BalancesCard } from './BalancesCard'
+import { IncomeCard } from './IncomeCard'
+import { TransferCheckCard } from './TransferCheckCard'
+import { MonthAnalyticsCard } from './MonthAnalyticsCard'
 import { LimitsCard } from './LimitsCard'
 import { TransactionsCard } from './TransactionsCard'
 import { StatementImportCard } from './StatementImportCard'
 import { GettingStartedCard } from './GettingStartedCard'
-import { DepositForm } from './DepositForm'
-import { DepositHistory } from './DepositHistory'
 import { MoneySettingsForm } from './MoneySettingsForm'
-import { formatDate, formatMoney, formatMoneyExact, plural } from './format'
+import { formatDate } from './format'
 import styles from './MoneyTab.module.css'
 
-const SETTINGS_ID = 'money-settings'
+type Mode = 'turkey' | 'month'
 
 // 'октябрь' + 2026 → 'Октябрь 2026'
 function monthTitle(year: number, monthIndex: number): string {
@@ -54,97 +62,146 @@ function monthTitle(year: number, monthIndex: number): string {
   return `${text[0].toUpperCase()}${text.slice(1)} ${year}`
 }
 
-// Запоминает счёт из выписки: тип, конец периода и (для накопительного) остаток.
-function rememberAccount(
-  accounts: Record<string, AccountInfo>,
-  parsed: ParsedStatement,
-  info: AccountInfo,
-): Record<string, AccountInfo> {
-  if (!parsed.account) return accounts // номера нет — запоминать нечего
-  return { ...accounts, [parsed.account]: { ...accounts[parsed.account], ...info } }
+// Запоминает счёт из выписки: тип, период и остатки на начало и конец периода.
+function rememberAccount(money: MoneyData, parsed: ParsedStatement, kind: AccountKind): Record<string, AccountInfo> {
+  if (!parsed.account) return money.accounts // номера нет — запоминать нечего
+  const old = money.accounts[parsed.account]
+  const dates = parsed.operations.map((o) => o.date).sort()
+  const start = parsed.periodStart ?? dates[0]
+  const end = parsed.periodEnd ?? dates.at(-1)
+  const balances = [...(old?.balances ?? [])]
+  const put = (snapshot: BalanceSnapshot) => {
+    const i = balances.findIndex((b) => b.date === snapshot.date)
+    if (i >= 0) balances[i] = snapshot
+    else balances.push(snapshot)
+  }
+  // «Входящий остаток» — это остаток на конец дня перед началом периода.
+  if (parsed.openingKop !== null && start) put({ date: addDays(start, -1), kop: parsed.openingKop })
+  if (parsed.closingKop !== null && end) put({ date: end, kop: parsed.closingKop })
+  const min = (a?: string, b?: string) => (!a ? b : !b ? a : a < b ? a : b)
+  const max = (a?: string, b?: string) => (!a ? b : !b ? a : a > b ? a : b)
+  return {
+    ...money.accounts,
+    [parsed.account]: {
+      kind,
+      periodStart: min(old?.periodStart, start),
+      periodEnd: max(old?.periodEnd, end),
+      balances,
+    },
+  }
 }
 
-// Последняя дата операций выписки — если в шапке не нашёлся период.
-function lastOperationDate(parsed: ParsedStatement): string | undefined {
-  return parsed.operations.reduce<string | undefined>((max, o) => (!max || o.date > max ? o.date : max), undefined)
+// Отмечает смену в дни, где пришёл доход, а смена не отмечена. Отмеченные дни не трогаем.
+function markShifts(shifts: ShiftsData, dates: string[]): { shifts: ShiftsData; marked: number } {
+  const days = { ...shifts.days }
+  let marked = 0
+  for (const date of dates) {
+    if (days[date]) continue
+    days[date] = { status: 'shift', time: { ...DEFAULT_SHIFT_TIME } }
+    marked++
+  }
+  return { shifts: marked > 0 ? { days } : shifts, marked }
+}
+
+// Последняя отмеченная смена не позже сегодня — дата по умолчанию для «Получил за смену».
+function lastShiftDate(shifts: ShiftsData, today: string): string {
+  let best = ''
+  for (const [date, entry] of Object.entries(shifts.days)) {
+    if (entry.status === 'shift' && date <= today && date > best) best = date
+  }
+  return best || today
 }
 
 export function MoneyTab() {
   // Передаём функции загрузки (без скобок): React вызовет их один раз, при первом показе.
-  const [savings, setSavings] = useState<SavingsData>(loadSavings)
   const [money, setMoney] = useState<MoneyData>(loadMoney)
-  // «Сегодня» запоминаем один раз при открытии вкладки.
-  const [today] = useState(() => new Date())
-  // Месяц для конвертов, лимитов и операций. При открытии — последний месяц, где есть данные
-  // (выписка обычно отстаёт, и текущий месяц пустой), иначе — текущий.
-  const [view, setView] = useState(
-    () => latestDataMonth(money, savings.deposits) ?? { year: today.getFullYear(), monthIndex: today.getMonth() },
-  )
+  const [shifts, setShifts] = useState<ShiftsData>(loadShifts)
+  const [today] = useState(todayIso)
+  const [mode, setMode] = useState<Mode>('turkey')
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  // Месяц для режима «Месяц». При открытии — последний месяц, где есть данные.
+  const [view, setView] = useState(() => {
+    const [year, month] = today.split('-').map(Number)
+    return latestDataMonth(money) ?? { year, monthIndex: month - 1 }
+  })
 
   // Сохраняем при каждом изменении.
-  useEffect(() => saveSavings(savings), [savings])
   useEffect(() => saveMoney(money), [money])
-
-  // ---------- Копилка ----------
-  function changeGoal(goal: SavingsGoal) {
-    setSavings((prev) => ({ ...prev, goal }))
-  }
-  function addDeposits(list: Deposit[]) {
-    setSavings((prev) => ({ ...prev, deposits: [...prev.deposits, ...list] }))
-  }
-  function deleteDeposit(id: string) {
-    setSavings((prev) => ({ ...prev, deposits: prev.deposits.filter((d) => d.id !== id) }))
-  }
-
-  // После загрузки выписки показываем последний месяц с данными.
-  function showLatestMonth(nextMoney: MoneyData, nextDeposits: Deposit[]) {
-    const latest = latestDataMonth(nextMoney, nextDeposits)
-    if (latest) setView(latest)
-  }
+  useEffect(() => saveShifts(shifts), [shifts])
 
   // ---------- Импорт выписок ----------
-  function importCard(parsed: ParsedStatement) {
+  function importStatement(parsed: ParsedStatement, kind: AccountKind): string {
+    const accounts = rememberAccount(money, parsed, kind)
+    const name = `«${ACCOUNT_LABELS[kind]}»`
+    if (kind === 'other') {
+      setMoney({ ...money, accounts })
+      return `Счёт ··${parsed.account.slice(-4)} запомнен как другой — не учитывается.`
+    }
+
     // Каждой операции — номер счёта: он входит в ключ операции.
     const ops = statementOperations(parsed)
-    // Считаем результат от текущих данных, чтобы сразу вернуть числа в форму.
-    const result = mergeTransactions(money.transactions, ops)
-    const next: MoneyData = {
-      ...money,
-      transactions: result.transactions,
-      accounts: rememberAccount(money.accounts, parsed, {
-        kind: 'card',
-        periodEnd: parsed.periodEnd ?? lastOperationDate(parsed),
-      }),
+    let transactions = money.transactions
+    let removed = 0
+    if (kind !== 'card') {
+      // Миграция: копии операций этого счёта, по ошибке загруженные раньше как карта, убираем.
+      const cleaned = removeSavingsCopies(transactions, ops)
+      transactions = cleaned.transactions
+      removed = cleaned.removed
     }
+    const result = mergeTransactions(transactions, ops)
+    const next: MoneyData = { ...money, transactions: result.transactions, accounts }
     setMoney(next)
-    showLatestMonth(next, savings.deposits)
-    return { added: result.added, updated: result.updated, duplicates: result.duplicates }
+
+    let text = `${name}: новых операций ${result.added}.`
+    if (result.updated > 0) text += ` Обновлено: ${result.updated}.`
+    if (result.duplicates > 0) text += ` Без изменений: ${result.duplicates}.`
+    if (removed > 0) text += ` Убрано старых копий из операций карты: ${removed}.`
+
+    if (kind === 'card') {
+      // Пришёл доход, а смена не отмечена — отмечаем «Смена».
+      const dates = incomeShiftDates(
+        ops.map((o) => ({ ...o, id: '' })),
+        next,
+      )
+      const marked = markShifts(shifts, dates)
+      if (marked.marked > 0) {
+        setShifts(marked.shifts)
+        text += ` Отмечено смен по доходу: ${marked.marked}.`
+      }
+      const latest = latestDataMonth(next)
+      if (latest) setView(latest)
+    }
+    return text
   }
 
-  function importSavings(parsed: ParsedStatement, list: Deposit[]) {
-    const ops = statementOperations(parsed)
-    // Миграция: копии операций накопительного, по ошибке загруженные раньше как карта, убираем.
-    const cleaned = removeSavingsCopies(money.transactions, ops)
-    const periodEnd = parsed.periodEnd ?? lastOperationDate(parsed)
-    const next: MoneyData = {
-      ...money,
-      transactions: cleaned.transactions,
-      accounts: rememberAccount(money.accounts, parsed, {
-        kind: 'savings',
-        periodEnd,
-        balance:
-          parsed.closingKop !== null && periodEnd ? { date: periodEnd, amount: parsed.closingKop / 100 } : undefined,
-      }),
-    }
-    setMoney(next)
-    // addPiggyRecords: если пришёл остаток на начало за более раннюю дату — старый заменяется.
-    const deposits = addPiggyRecords(savings.deposits, list)
-    setSavings((prev) => ({ ...prev, deposits: addPiggyRecords(prev.deposits, list) }))
-    showLatestMonth(next, deposits)
-    return { removed: cleaned.removed }
+  // ---------- Доход и переводы ----------
+  function addManualIncome(shiftDate: string, rub: number) {
+    setMoney((prev) => ({ ...prev, manualIncome: { ...prev.manualIncome, [shiftDate]: rub } }))
+    setShifts((prev) => markShifts(prev, [shiftDate]).shifts)
   }
 
-  // ---------- Деньги ----------
+  function removeManualIncome(shiftDate: string) {
+    setMoney((prev) => {
+      const manualIncome = { ...prev.manualIncome }
+      delete manualIncome[shiftDate]
+      return { ...prev, manualIncome }
+    })
+  }
+
+  function toggleTransfer(shiftDate: string, kind: EnvelopeKind) {
+    setMoney((prev) => {
+      const marks = { ...prev.transfers[shiftDate] }
+      if (marks[kind]) delete marks[kind]
+      else marks[kind] = true
+      return { ...prev, transfers: { ...prev.transfers, [shiftDate]: marks } }
+    })
+  }
+
+  function saveBalances(balances: Partial<Record<BalanceKind, BalanceSnapshot>>) {
+    setMoney((prev) => ({ ...prev, manualBalances: { ...prev.manualBalances, ...balances } }))
+  }
+
+  // ---------- Категории и настройки ----------
   // Новая категория для операции = правило для всего магазина.
   function changeCategory(tx: Transaction, category: string) {
     setMoney((prev) => ({ ...prev, rules: { ...prev.rules, [merchantKey(tx.purpose)]: category } }))
@@ -161,8 +218,15 @@ export function MoneyTab() {
     }))
   }
 
-  function saveSettings(split: MoneyData['settings']['split'], shiftPay: number) {
-    setMoney((prev) => ({ ...prev, settings: { ...prev.settings, split, shiftPay } }))
+  function saveSettings(changes: Pick<MoneySettings, 'split' | 'shiftPay' | 'shiftsPerMonth' | 'goal'>) {
+    setMoney((prev) => ({ ...prev, settings: { ...prev.settings, ...changes } }))
+  }
+
+  function setAccountKind(account: string, kind: AccountKind) {
+    setMoney((prev) => ({
+      ...prev,
+      accounts: { ...prev.accounts, [account]: { ...prev.accounts[account], kind } },
+    }))
   }
 
   function shiftMonth(delta: number) {
@@ -172,116 +236,118 @@ export function MoneyTab() {
     })
   }
 
-  // Шаг 3 инструкции: раскрыть «Настройки» и прокрутить к ним.
-  function openSettings() {
-    const details = document.getElementById(SETTINGS_ID)
-    if (details instanceof HTMLDetailsElement) {
-      details.open = true
-      details.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
-  }
-
   // ---------- Расчёты для показа ----------
-  const summary = calcSummary(savings.goal, savings.deposits, today)
-  const hasData = money.transactions.length > 0 || savings.deposits.length > 0
   const prefix = monthPrefix(view.year, view.monthIndex)
-  const envelopes = calcEnvelopes(money, savings.deposits, prefix)
-  const limits = calcLimits(money, prefix)
-  const monthTransactions = money.transactions.filter((t) => t.date.startsWith(prefix))
-  const latest = latestDataMonth(money, savings.deposits)
+  const monthIncomes = shiftIncomes(money).filter((i) => i.shiftDate.startsWith(prefix))
+  const monthTransactions = money.transactions.filter(
+    (t) => t.date.startsWith(prefix) && (!t.account || money.accounts[t.account]?.kind === 'card'),
+  )
+  const latest = latestDataMonth(money)
   const isLatestMonth = latest !== null && view.year === latest.year && view.monthIndex === latest.monthIndex
-  const until = dataUntil(money, savings.deposits)
+  const until = dataUntil(money)
+  const hasData = money.transactions.length > 0 || Object.keys(money.manualIncome).length > 0
   const accountList = Object.values(money.accounts)
-  const { split, shiftPay } = money.settings
 
   return (
     <section className={styles.money}>
-      <GoalCard goal={savings.goal} onChange={changeGoal} />
-      {hasData && (
-        <SavingsSummary
-          summary={summary}
-          shiftsLeft={shiftsToGoal(summary.left, money.settings)}
-          turkeyPerShift={turkeyPerShift(money.settings)}
-          balance={savingsBalance(money.accounts)}
+      <div className={styles.modeBar}>
+        <div className={styles.modeSwitch} role="group" aria-label="Режим">
+          <Button size="sm" aria-pressed={mode === 'turkey'} onClick={() => setMode('turkey')}>
+            {money.settings.goal.title}
+          </Button>
+          <Button size="sm" aria-pressed={mode === 'month'} onClick={() => setMode('month')}>
+            Месяц
+          </Button>
+        </div>
+        <Button
+          size="sm"
+          iconOnly
+          icon={<Settings size={16} />}
+          aria-label="Настройки денег"
+          title="Настройки денег"
+          aria-pressed={settingsOpen}
+          onClick={() => setSettingsOpen((v) => !v)}
         />
+      </div>
+
+      {settingsOpen && (
+        <Card
+          title="Настройки"
+          actions={
+            <Button
+              variant="text"
+              size="sm"
+              iconOnly
+              icon={<X size={16} />}
+              aria-label="Закрыть настройки"
+              onClick={() => setSettingsOpen(false)}
+            />
+          }
+        >
+          <MoneySettingsForm money={money} onSave={saveSettings} onAccountKind={setAccountKind} />
+        </Card>
       )}
 
-      <StatementImportCard
-        transactions={money.transactions}
-        deposits={savings.deposits}
-        accounts={money.accounts}
-        savedTotal={summary.saved}
-        onImportCard={importCard}
-        onImportSavings={importSavings}
-      />
-
-      {hasData ? (
+      {mode === 'turkey' ? (
+        <TurkeyCard
+          forecast={turkeyForecast(money, shifts, today)}
+          settings={money.settings}
+          hasAccount={
+            accountList.some((a) => a.kind === 'turkey') || money.manualBalances.turkey !== undefined
+          }
+        />
+      ) : (
         <>
+          <BalancesCard money={money} today={today} onSaveBalances={saveBalances} />
+
           <div className={styles.monthNav}>
             <div className={styles.monthHeading}>
               <h2 className={styles.monthTitle}>{monthTitle(view.year, view.monthIndex)}</h2>
-              {until && <span className={styles.caption}>данные по {formatDate(until)}</span>}
+              {until && <span className={styles.caption}>выписка карты по {formatDate(until)}</span>}
             </div>
             <div className={styles.monthButtons}>
               <Button variant="text" size="sm" disabled={!latest || isLatestMonth} onClick={() => latest && setView(latest)}>
                 Последний месяц
               </Button>
-              <Button
-                size="sm"
-                iconOnly
-                icon={<ChevronLeft size={16} />}
-                aria-label="Предыдущий месяц"
-                onClick={() => shiftMonth(-1)}
-              />
-              <Button
-                size="sm"
-                iconOnly
-                icon={<ChevronRight size={16} />}
-                aria-label="Следующий месяц"
-                onClick={() => shiftMonth(1)}
-              />
+              <Button size="sm" iconOnly icon={<ChevronLeft size={16} />} aria-label="Предыдущий месяц" onClick={() => shiftMonth(-1)} />
+              <Button size="sm" iconOnly icon={<ChevronRight size={16} />} aria-label="Следующий месяц" onClick={() => shiftMonth(1)} />
             </div>
           </div>
 
-          <EnvelopesCard envelopes={envelopes} split={split} />
-          <LimitsCard usages={limits} lifeCategories={lifeCategories(money)} onSave={saveLimits} />
-          <TransactionsCard
-            transactions={monthTransactions}
-            rules={money.rules}
-            categories={allCategories(money)}
-            onCategoryChange={changeCategory}
+          <IncomeCard
+            incomes={monthIncomes}
+            money={money}
+            defaultDate={lastShiftDate(shifts, today)}
+            onAddManual={addManualIncome}
+            onRemoveManual={removeManualIncome}
+            onToggleTransfer={toggleTransfer}
           />
+
+          {hasData ? (
+            <>
+              <TransferCheckCard money={money} />
+              <MonthAnalyticsCard analytics={monthAnalytics(money, prefix)} split={money.settings.split} />
+              <LimitsCard items={categorySpending(money, prefix)} categories={spendingCategories(money)} onSave={saveLimits} />
+              <TransactionsCard
+                transactions={monthTransactions}
+                rules={money.rules}
+                categories={allCategories(money)}
+                onCategoryChange={changeCategory}
+              />
+            </>
+          ) : (
+            <GettingStartedCard
+              cardDone={accountList.some((a) => a.kind === 'card')}
+              envelopesDone={accountList.some((a) => a.kind === 'life' || a.kind === 'turkey' || a.kind === 'clothes')}
+              shiftPay={money.settings.shiftPay}
+              turkeyPercent={money.settings.split.turkey}
+              onOpenSettings={() => setSettingsOpen(true)}
+            />
+          )}
         </>
-      ) : (
-        <GettingStartedCard
-          cardDone={accountList.some((a) => a.kind === 'card')}
-          savingsDone={accountList.some((a) => a.kind === 'savings')}
-          shiftPay={shiftPay}
-          turkeyPercent={split.turkey}
-          onOpenSettings={openSettings}
-        />
       )}
 
-      <Collapsible title="Пополнить копилку вручную" subtitle="Если откладывал наличными или не через накопительный счёт">
-        <DepositForm onAdd={(deposit) => addDeposits([deposit])} />
-      </Collapsible>
-      <Collapsible
-        title="История копилки"
-        subtitle={
-          savings.deposits.length > 0
-            ? `${savings.deposits.length} ${plural(savings.deposits.length, 'запись', 'записи', 'записей')} · итого ${formatMoneyExact(summary.saved)}`
-            : 'Пока пусто'
-        }
-      >
-        <DepositHistory deposits={savings.deposits} onDelete={deleteDeposit} />
-      </Collapsible>
-      <Collapsible
-        id={SETTINGS_ID}
-        title="Настройки"
-        subtitle={`${split.life}% жизнь / ${split.turkey}% Турция / ${split.clothes}% одежда · за смену ${formatMoney(shiftPay)}`}
-      >
-        <MoneySettingsForm settings={money.settings} onSave={saveSettings} />
-      </Collapsible>
+      <StatementImportCard money={money} shifts={shifts} onImport={importStatement} />
     </section>
   )
 }

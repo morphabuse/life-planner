@@ -1,4 +1,4 @@
-// Пустое состояние «Денег»: пока нет ни операций, ни записей копилки, вместо карточек
+// Пустое состояние режима «Месяц»: пока нет ни операций, ни доходов, вместо карточек
 // с нулями показываем три шага, с чего начать.
 import { Check } from 'lucide-react'
 import { Button, Card } from '../../components/ui'
@@ -7,27 +7,27 @@ import styles from './MoneyTab.module.css'
 
 interface Props {
   cardDone: boolean // выписка карты уже загружена
-  savingsDone: boolean // выписка накопительного уже загружена
+  envelopesDone: boolean // загружена выписка хотя бы одного счёта-конверта
   shiftPay: number
   turkeyPercent: number
   onOpenSettings: () => void
 }
 
-export function GettingStartedCard({ cardDone, savingsDone, shiftPay, turkeyPercent, onOpenSettings }: Props) {
+export function GettingStartedCard({ cardDone, envelopesDone, shiftPay, turkeyPercent, onOpenSettings }: Props) {
   const steps = [
     {
       title: 'Загрузи выписку карты',
-      text: 'PDF основного счёта из приложения Ozon Банка: «Справка о движении средств». Из неё — доход, траты, конверты и лимиты.',
+      text: 'PDF основного счёта из приложения Ozon Банка: «Справка о движении средств». Из неё — доход за смены, траты и лимиты. Или вводи доход вручную: «Получил за смену».',
       done: cardDone,
     },
     {
-      title: 'Загрузи выписку накопительного счёта',
-      text: 'Счёт «Турция»: пополнения, снятия и проценты попадут в копилку, остаток сверится со счётом.',
-      done: savingsDone,
+      title: 'Загрузи выписки счетов «Жизнь», «Турция», «Одежда и уход»',
+      text: 'Из них — остатки («можно потратить», рост «Турции») и сверка переводов. Счёт спросит, какой он, один раз.',
+      done: envelopesDone,
     },
     {
       title: 'Проверь цену смены',
-      text: `Сейчас ${formatMoney(shiftPay)} за смену, ${turkeyPercent} % — в копилку. От этого зависит «N смен до Турции».`,
+      text: `Сейчас ${formatMoney(shiftPay)} за смену, ${turkeyPercent} % — на «Турцию». От этого зависит прогноз «Успеваю ли».`,
       done: false,
       action: (
         <Button size="sm" variant="text" onClick={onOpenSettings}>

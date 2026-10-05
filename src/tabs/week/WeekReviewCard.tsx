@@ -51,10 +51,10 @@ export function WeekReviewCard({ summary: s, review, onChange, onClose }: Props)
           <div className={styles.reviewLabel}>Деньги</div>
           <div className={styles.reviewValue}>Доход: {formatMoney(s.income)}</div>
           <div className={styles.caption}>
-            {s.income > 0 ? 'по выписке за неделю' : 'дохода по выписке за неделю нет'}
+            {s.income > 0 ? 'за смены этой недели' : 'дохода за смены этой недели нет'}
           </div>
           <div className={styles.caption}>
-            {s.saved >= 0 ? `В копилку: ${formatMoney(s.saved)}` : `Из копилки снято: ${formatMoney(-s.saved)}`}
+            {s.saved >= 0 ? `На «Турцию»: +${formatMoney(s.saved)}` : `С «Турции» снято: ${formatMoney(-s.saved)}`}
           </div>
         </div>
 

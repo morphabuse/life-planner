@@ -4,55 +4,39 @@
 // случайно написать несуществующую вкладку, например 'weak'.
 export type TabId = 'today' | 'money' | 'week' | 'shifts' | 'habits'
 
-// ---------- Копилка ----------
-
-// Цель накоплений.
-export interface SavingsGoal {
-  title: string // например «Турция»
-  targetAmount: number // целевая сумма в рублях
-  targetMonth: string // месяц цели в формате 'YYYY-MM', например '2027-08'
-}
-
-// Одна запись копилки: пополнение (amount > 0) или снятие (amount < 0).
-export interface Deposit {
-  id: string // уникальный id, нужен React для списков и для удаления
-  date: string // дата в формате 'YYYY-MM-DD'
-  amount: number // сумма в рублях со знаком: +5000 — пополнение, −1500 — снятие
-  // Ключ операции из выписки накопительного счёта ('счёт|документ|дата время';
-  // у старых записей — 'документ|дата время'), если запись добавлена из выписки.
-  // Нужен, чтобы не добавить её дважды.
-  importKey?: string
-}
-
-// Данные копилки (часть вкладки «Деньги»).
-export interface SavingsData {
-  goal: SavingsGoal
-  deposits: Deposit[]
-}
-
 // ---------- Деньги ----------
 
-// Распределение зарплаты по конвертам, в процентах (в сумме 100).
+// Цель «Турция»: прогресс — рост остатка счёта «Турция» с даты старта.
+export interface TurkeyGoal {
+  title: string // «Турция»
+  amount: number // целевая сумма, ₽
+  start: string // 'YYYY-MM-DD' — с этого дня считается прогресс (старт с 0 ₽)
+  deadline: string // 'YYYY-MM-DD' — к этому дню деньги должны быть
+}
+
+// Распределение каждого дохода по счетам-конвертам, в процентах (в сумме 100).
 export interface SalarySplit {
-  life: number // жизнь
-  turkey: number // Турция (копилка)
-  clothes: number // одежда
+  life: number // счёт «Жизнь»
+  turkey: number // счёт «Турция»
+  clothes: number // счёт «Одежда и уход»
 }
 
 export interface MoneySettings {
   split: SalarySplit
-  shiftPay: number // сколько я получаю за смену, ₽
-  limits: Record<string, number> // лимиты трат внутри конверта «жизнь»: { 'Кафе': 2000, ... }
+  shiftPay: number // сколько я получаю за смену, ₽ (для плана и прогноза)
+  shiftsPerMonth: number // сколько смен в месяц по плану (для прогноза, пока мало данных)
+  goal: TurkeyGoal
+  limits: Record<string, number> // лимиты трат по категориям: { 'Кафе': 2000, ... }
   customCategories: string[] // свои категории, добавленные вручную
 }
 
-// Операция из выписки карты.
+// Операция из выписки (любого учитываемого счёта: карты или конверта).
 export interface Transaction {
   // 'номер счёта|номер документа|ГГГГ-ММ-ДД ЧЧ:ММ:СС' — защита от дублей.
   // Номер счёта нужен: перевод между своими счетами есть в обеих выписках
   // с тем же документом и временем. У старых операций (без account) — без счёта.
   id: string
-  account?: string // номер лицевого счёта из шапки выписки (20 цифр)
+  account?: string // номер лицевого счёта (20 цифр); нет — старая операция карты
   date: string // 'YYYY-MM-DD'
   time: string // 'HH:MM:SS'
   doc: string // номер документа
@@ -60,25 +44,53 @@ export interface Transaction {
   amount: number // в КОПЕЙКАХ со знаком: +123456 = +1 234.56 ₽ (целые числа — без ошибок округления)
 }
 
+// Какой это счёт. Конверты — настоящие накопительные счета.
+//   card    — основной счёт с картой: с него траты, на него приходит доход
+//   life / turkey / clothes — счета «Жизнь», «Турция», «Одежда и уход»
+//   other   — другой счёт, не учитываем (переводы с него и так видны на карте)
+export type AccountKind = 'card' | 'life' | 'turkey' | 'clothes' | 'other'
+
+// Счета, у которых считаем остаток (всё, кроме «другого»).
+export type BalanceKind = Exclude<AccountKind, 'other'>
+
+// Конверты: на какие счета делится каждый доход.
+export type EnvelopeKind = 'life' | 'turkey' | 'clothes'
+
+// Остаток на счёте на КОНЕЦ дня date, в копейках.
+export interface BalanceSnapshot {
+  date: string // 'YYYY-MM-DD'
+  kop: number
+}
+
+export interface AccountInfo {
+  kind: AccountKind
+  periodStart?: string // 'YYYY-MM-DD' — с какой даты есть выписки этого счёта
+  periodEnd?: string // 'YYYY-MM-DD' — по какую дату есть выписки
+  // Остатки из выписок: «Входящий остаток» (на конец дня перед периодом) и «Исходящий».
+  balances: BalanceSnapshot[]
+}
+
+// Отметки «Перевёл» для дохода смены: какие доли уже переведены на свои счета.
+export type TransferMarks = Partial<Record<EnvelopeKind, boolean>>
+
 export interface MoneyData {
   settings: MoneySettings
   transactions: Transaction[]
   // Запомненные правила «магазин → категория». Ключ — назначение платежа без цифр.
   rules: Record<string, string>
-  // Запомненные счета: номер лицевого счёта → тип и что о нём известно из выписки.
-  // Так при следующей загрузке тип выписки не надо угадывать.
+  // Запомненные счета: номер лицевого счёта → какой это счёт и что известно из выписок.
   accounts: Record<string, AccountInfo>
+  // «Получил за смену» вручную: дата смены → сумма, ₽. Выписка карты потом сверяет.
+  manualIncome: Record<string, number>
+  // Галочки «Перевёл»: дата смены → какие доли её дохода переведены.
+  transfers: Record<string, TransferMarks>
+  // Остатки, введённые вручную (когда выписки нет или она старая).
+  manualBalances: Partial<Record<BalanceKind, BalanceSnapshot>>
 }
 
-// Тип выписки (и счёта): карта (основной счёт) или накопительный (копилка).
+// Тип выписки, определённый по её содержимому: карта или накопительный счёт.
+// Это только подсказка — какой именно это счёт, выбираю я, и сайт запоминает.
 export type StatementKind = 'card' | 'savings'
-
-export interface AccountInfo {
-  kind: StatementKind
-  periodEnd?: string // 'YYYY-MM-DD' — по какую дату загружена последняя выписка
-  // «Исходящий остаток» последней выписки накопительного — для сверки с копилкой.
-  balance?: { date: string; amount: number } // amount — в рублях
-}
 
 // ---------- Смены ----------
 

@@ -4,15 +4,10 @@
 // Функции вида `value is X` — «охранники типа»: если вернули true,
 // TypeScript дальше считает, что value имеет тип X.
 import type {
-  AccountInfo,
   DayEntry,
-  Deposit,
   Habit,
   HabitsData,
-  MoneyData,
-  MoneySettings,
   SalarySplit,
-  SavingsGoal,
   Transaction,
   ShiftTime,
   ShiftsData,
@@ -57,31 +52,6 @@ export function isIsoDate(value: unknown): value is string {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
 }
 
-export function isSavingsGoal(value: unknown): value is SavingsGoal {
-  return (
-    isObject(value) &&
-    typeof value.title === 'string' &&
-    value.title.trim() !== '' &&
-    isPositiveNumber(value.targetAmount) &&
-    typeof value.targetMonth === 'string' &&
-    /^\d{4}-\d{2}$/.test(value.targetMonth) // формат 'YYYY-MM'
-  )
-}
-
-export function isDeposit(value: unknown): value is Deposit {
-  return (
-    isObject(value) &&
-    typeof value.id === 'string' &&
-    value.id !== '' &&
-    isIsoDate(value.date) &&
-    // Со знаком: + пополнение, − снятие. Ноль не бывает.
-    typeof value.amount === 'number' &&
-    Number.isFinite(value.amount) &&
-    value.amount !== 0 &&
-    (value.importKey === undefined || typeof value.importKey === 'string')
-  )
-}
-
 // ---------- Деньги ----------
 
 // Неотрицательное число (проценты, лимиты могут быть 0).
@@ -104,17 +74,6 @@ export function isLimits(value: unknown): value is Record<string, number> {
   return isObject(value) && Object.values(value).every(isNonNegativeNumber)
 }
 
-export function isMoneySettings(value: unknown): value is MoneySettings {
-  return (
-    isObject(value) &&
-    isSalarySplit(value.split) &&
-    isPositiveNumber(value.shiftPay) &&
-    isLimits(value.limits) &&
-    Array.isArray(value.customCategories) &&
-    value.customCategories.every((c) => typeof c === 'string' && c.trim() !== '')
-  )
-}
-
 export function isTransaction(value: unknown): value is Transaction {
   return (
     isObject(value) &&
@@ -127,37 +86,6 @@ export function isTransaction(value: unknown): value is Transaction {
     (value.account === undefined || typeof value.account === 'string') &&
     typeof value.purpose === 'string' &&
     Number.isInteger(value.amount) // копейки — целое число
-  )
-}
-
-export function isAccountInfo(value: unknown): value is AccountInfo {
-  return (
-    isObject(value) &&
-    (value.kind === 'card' || value.kind === 'savings') &&
-    (value.periodEnd === undefined || isIsoDate(value.periodEnd)) &&
-    (value.balance === undefined ||
-      (isObject(value.balance) &&
-        isIsoDate(value.balance.date) &&
-        typeof value.balance.amount === 'number' &&
-        Number.isFinite(value.balance.amount)))
-  )
-}
-
-// Счета: { '40817…': { kind, periodEnd?, balance? } }.
-export function isAccounts(value: unknown): value is Record<string, AccountInfo> {
-  return isObject(value) && Object.values(value).every(isAccountInfo)
-}
-
-// accounts необязательны: в бэкапе v5 и в старом localStorage их ещё нет.
-export function isMoneyData(value: unknown): value is Omit<MoneyData, 'accounts'> & { accounts?: unknown } {
-  return (
-    isObject(value) &&
-    isMoneySettings(value.settings) &&
-    Array.isArray(value.transactions) &&
-    value.transactions.every(isTransaction) &&
-    isObject(value.rules) &&
-    Object.values(value.rules).every((c) => typeof c === 'string' && c !== '') &&
-    (value.accounts === undefined || isAccounts(value.accounts))
   )
 }
 

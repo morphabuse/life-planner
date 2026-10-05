@@ -336,35 +336,6 @@
   margin-top: var(--space-3);
 }
 
-.candidates {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  max-height: var(--scroll-list-max-height);
-  margin: var(--space-3) 0 0;
-  padding: var(--space-3);
-  overflow-y: auto; /* в выписке за 3 месяца — десятки записей */
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-md);
-  list-style: none;
-}
-
-.candidate {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  cursor: pointer;
-}
-
-.candidateAmount {
-  color: var(--status-success-fg);
-  font-weight: var(--weight-medium);
-}
-
-.candidateMinus {
-  font-weight: var(--weight-medium);
-}
-
 /* ---------- С чего начать ---------- */
 
 .steps {
@@ -411,45 +382,198 @@
   font-weight: var(--weight-semibold);
 }
 
-/* ---------- История пополнений ---------- */
-
-.history {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.historyItem {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-2) 0;
-  border-top: var(--border-width) solid var(--color-border);
-}
-
-.historyItem:first-child {
-  border-top: none;
-  padding-top: 0;
-}
-
-.historyDate {
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-}
-
-.historyAmount {
-  flex: 1; /* занимает всё свободное место, кнопка уезжает вправо */
-  color: var(--status-success-fg);
-  font-weight: var(--weight-medium);
-}
-
-.historyMinus {
-  color: var(--color-text);
-}
-
 /* Подсказка над списком операций (внутри свёрнутого блока). */
 .txHint {
   margin-bottom: var(--space-3);
   color: var(--color-text-muted);
   font-size: var(--text-sm);
+}
+
+.captionXs {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+/* ---------- Режимы «Турция | Месяц» и шестерёнка ---------- */
+
+.modeBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.modeSwitch {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ---------- Прогноз «Успеваю ли» ---------- */
+
+.forecast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+}
+
+.forecastIcon {
+  flex-shrink: 0;
+}
+
+.forecast_ok {
+  color: var(--status-success-fg);
+}
+
+.forecast_tight {
+  color: var(--status-leave-fg);
+}
+
+.forecast_short {
+  color: var(--status-danger-fg);
+}
+
+/* ---------- Можно потратить и остатки ---------- */
+
+.spendable {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.accountGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+/* ---------- Доход за смены ---------- */
+
+.incomes {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.income {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.income:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.incomeHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.incomeDate {
+  font-weight: var(--weight-medium);
+}
+
+.incomeAmount {
+  color: var(--status-success-fg);
+  font-weight: var(--weight-semibold);
+}
+
+.shares {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+}
+
+.share {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.shareDone {
+  color: var(--color-text-subtle);
+  text-decoration: line-through;
+}
+
+.incomeForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.incomeForm + .captionXs {
+  margin-top: var(--space-2);
+}
+
+/* ---------- Сверка переводов ---------- */
+
+.checks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.checkRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.importIncomes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+/* ---------- Настройки ---------- */
+
+.settingsSection {
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.sectionTitle {
+  margin-bottom: var(--space-3);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+}
+
+.accountList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.accountRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
 }

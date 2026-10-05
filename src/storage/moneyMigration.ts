@@ -73,7 +73,7 @@ export function repairMoneyData(
 // выписках Ozon его нет — выписка накопительного загружалась как карта, и его
 // операции попадали в «Операции по карте». Проценты «Выплата процентов по счету
 // 4081…» бывают только на накопительном: такие старые операции (без номера счёта)
-// убираем и заодно запоминаем, что этот счёт — накопительный.
+// убираем и заодно запоминаем, что этот счёт — «Турция» (единственный накопительный, что загружался).
 // Его переводы убираются при следующей загрузке выписки накопительного
 // (removeSavingsCopies в moneyLogic.ts), а копии с карты чинятся загрузкой выписки карты.
 const SAVINGS_INTEREST = /Выплата процентов по сч[её]ту\s*(\d{20})/iu
@@ -87,7 +87,7 @@ export function removeLegacySavingsInterest(
     if (tx.account) return true
     const m = SAVINGS_INTEREST.exec(tx.purpose)
     if (!m) return true
-    if (!newAccounts[m[1]]) newAccounts[m[1]] = { kind: 'savings' }
+    if (!newAccounts[m[1]]) newAccounts[m[1]] = { kind: 'turkey', balances: [] }
     return false
   })
   if (kept.length === transactions.length) return null

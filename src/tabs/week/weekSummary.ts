@@ -1,7 +1,8 @@
 // Итог недели: собираем цифры из «Смен», «Денег», задач и привычек.
 // Своих расчётов почти нет — вызываем логику других вкладок, ничего не дублируем.
-import type { Deposit, HabitsData, MoneyData, ShiftsData, WeekData } from '../../types'
-import { incomeBetween, isOpeningRecord, missedCost } from '../money/moneyLogic'
+import type { HabitsData, MoneyData, ShiftsData, WeekData } from '../../types'
+import { incomeBetween, missedCost } from '../money/moneyLogic'
+import { turkeyAdded } from '../money/turkeyLogic'
 import {
   AUTO_SHIFTS_NAME,
   countInRange,
@@ -24,8 +25,8 @@ export interface WeekSummary {
   missed: number // «не вышел»
   earned: number // отработано × цена смены, ₽
   lost: { total: number; turkey: number } // цена пропусков, ₽
-  income: number // доход «Доход: склад» по выписке за неделю, ₽
-  saved: number // пополнения копилки минус снятия за неделю, ₽
+  income: number // доход за смены недели (по выписке или введённый), ₽
+  saved: number // сколько добавилось на счёт «Турция» за неделю, ₽
   tasksDone: number
   tasksTotal: number
   habits: HabitWeek[]
@@ -34,7 +35,7 @@ export interface WeekSummary {
 export function weekSummary(
   monday: string,
   today: string,
-  data: { week: WeekData; shifts: ShiftsData; money: MoneyData; deposits: Deposit[]; habits: HabitsData },
+  data: { week: WeekData; shifts: ShiftsData; money: MoneyData; habits: HabitsData },
 ): WeekSummary {
   const dates = weekDates(monday)
   const from = dates[0]
@@ -51,10 +52,6 @@ export function weekSummary(
   }
 
   const tasks = dates.flatMap((d) => data.week.tasks[d] ?? [])
-  // Остаток на начало выписки — не пополнение этой недели.
-  const saved = data.deposits
-    .filter((d) => inWeek(d.date) && !isOpeningRecord(d))
-    .reduce((s, d) => s + d.amount, 0)
 
   const habits: HabitWeek[] = data.habits.habits
     .filter((h) => !h.archived)
@@ -75,7 +72,7 @@ export function weekSummary(
     earned: worked * data.money.settings.shiftPay,
     lost: missedCost(missed, data.money.settings),
     income: incomeBetween(data.money, from, to),
-    saved: Math.round(saved * 100) / 100,
+    saved: turkeyAdded(data.money, from, to) / 100,
     tasksDone: tasks.filter((t) => t.done).length,
     tasksTotal: tasks.length,
     habits,

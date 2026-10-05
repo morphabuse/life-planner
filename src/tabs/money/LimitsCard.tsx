@@ -1,21 +1,22 @@
-// Лимиты трат внутри конверта «жизнь»: полоски, превышение красным, редактирование.
+// Траты месяца по категориям: у категорий с лимитом — полоска, превышение красным.
+// Лимиты можно менять, удалять и добавлять (на любую категорию трат или новую свою).
 import { useState } from 'react'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { Badge, Button, Card, Input, ProgressBar, Select } from '../../components/ui'
-import type { LimitUsage } from './moneyLogic'
+import type { CategorySpending } from './moneyLogic'
 import { formatMoney } from './format'
 import styles from './MoneyTab.module.css'
 
 const NEW_CATEGORY = '+ Новая категория…'
 
 interface Props {
-  usages: LimitUsage[]
-  lifeCategories: string[] // категории, на которые можно поставить лимит
+  items: CategorySpending[]
+  categories: string[] // категории трат, на которые можно поставить лимит
   // Сохранить лимиты; newCategories — новые свои категории, созданные здесь.
   onSave: (limits: Record<string, number>, newCategories: string[]) => void
 }
 
-export function LimitsCard({ usages, lifeCategories, onSave }: Props) {
+export function LimitsCard({ items, categories, onSave }: Props) {
   const [editing, setEditing] = useState(false)
   // Черновик: категория → сумма строкой (так удобнее с полями ввода).
   const [draft, setDraft] = useState<Record<string, string>>({})
@@ -25,7 +26,7 @@ export function LimitsCard({ usages, lifeCategories, onSave }: Props) {
   const [error, setError] = useState('')
 
   function startEditing() {
-    setDraft(Object.fromEntries(usages.map((u) => [u.category, String(u.limit)])))
+    setDraft(Object.fromEntries(items.filter((u) => u.limit !== null).map((u) => [u.category, String(u.limit)])))
     setAddCategory('')
     setNewName('')
     setAddAmount('')
@@ -34,7 +35,7 @@ export function LimitsCard({ usages, lifeCategories, onSave }: Props) {
   }
 
   // Категории, на которые лимита ещё нет, + пункт «новая категория».
-  const available = lifeCategories.filter((c) => !(c in draft))
+  const available = categories.filter((c) => !(c in draft))
   const addOptions = [...available, NEW_CATEGORY]
   const selectedAdd = addCategory || addOptions[0]
 
@@ -57,14 +58,14 @@ export function LimitsCard({ usages, lifeCategories, onSave }: Props) {
       if (value === '' || !(amount >= 0)) return setError(`Неверная сумма у «${category}»`)
       limits[category] = amount
     }
-    const newCategories = Object.keys(limits).filter((c) => !lifeCategories.includes(c))
+    const newCategories = Object.keys(limits).filter((c) => !categories.includes(c))
     onSave(limits, newCategories)
     setEditing(false)
   }
 
   if (editing) {
     return (
-      <Card title="Лимиты в конверте «жизнь»" subtitle="Сумма в месяц на категорию">
+      <Card title="Траты по категориям" subtitle="Сумма в месяц на категорию">
         <ul className={styles.limitEditList}>
           {Object.entries(draft).map(([category, value]) => (
             <li key={category} className={styles.limitEditRow}>
@@ -144,25 +145,35 @@ export function LimitsCard({ usages, lifeCategories, onSave }: Props) {
 
   return (
     <Card
-      title="Лимиты в конверте «жизнь»"
+      title="Траты по категориям"
       actions={
         <Button variant="text" size="sm" icon={<Pencil size={14} />} onClick={startEditing}>
           Изменить
         </Button>
       }
     >
-      {usages.length === 0 ? (
-        <p className={styles.caption}>Лимитов нет. Нажми «Изменить», чтобы добавить.</p>
+      {items.length === 0 ? (
+        <p className={styles.caption}>Трат в этом месяце нет. Лимиты — по кнопке «Изменить».</p>
       ) : (
         <ul className={styles.limits}>
-          {usages.map((u) => {
-            const percent = u.limit > 0 ? (u.spent / u.limit) * 100 : u.spent > 0 ? 100 : 0
+          {items.map((u) => {
+            const limit = u.limit
+            // Без лимита — просто сумма, без полоски.
+            if (limit === null) {
+              return (
+                <li key={u.category} className={styles.limitHeader}>
+                  <span className={styles.limitName}>{u.category}</span>
+                  <span className={styles.caption}>{formatMoney(u.spent)}</span>
+                </li>
+              )
+            }
+            const percent = limit > 0 ? (u.spent / limit) * 100 : u.spent > 0 ? 100 : 0
             return (
               <li key={u.category} className={styles.limit}>
                 <div className={styles.limitHeader}>
                   <span className={styles.limitName}>{u.category}</span>
                   <span className={u.over > 0 ? styles.danger : styles.caption}>
-                    {formatMoney(u.spent)} из {formatMoney(u.limit)}
+                    {formatMoney(u.spent)} из {formatMoney(limit)}
                   </span>
                   {u.over > 0 && <Badge tone="danger">превышен на {formatMoney(u.over)}</Badge>}
                 </div>

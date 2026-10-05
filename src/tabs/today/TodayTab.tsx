@@ -5,13 +5,14 @@ import { useEffect, useState } from 'react'
 import type { HabitsData, WeekData } from '../../types'
 import { loadWeek, saveWeek } from '../../storage/weekStorage'
 import { loadShifts } from '../../storage/shiftsStorage'
-import { loadSavings } from '../../storage/savingsStorage'
 import { loadMoney } from '../../storage/moneyStorage'
 import { loadHabits, saveHabits } from '../../storage/habitsStorage'
 import { formatDayLong, todayIso } from '../../utils/date'
 import { addTask, toggleTask } from '../week/weekLogic'
-import { formatMoney, plural } from '../money/format'
-import { moneyLine, shiftFocus } from './todayLogic'
+import { formatMoney } from '../money/format'
+import { turkeyForecast } from '../money/turkeyLogic'
+import { ForecastPhrase } from '../money/ForecastPhrase'
+import { shiftFocus } from './todayLogic'
 import { TodayShiftCard } from './TodayShiftCard'
 import { TodayTasksCard } from './TodayTasksCard'
 import { TodayHabitsCard } from './TodayHabitsCard'
@@ -20,10 +21,8 @@ import styles from './TodayTab.module.css'
 
 export function TodayTab() {
   const [today] = useState(todayIso)
-  const [now] = useState(() => new Date())
   const [week, setWeek] = useState<WeekData>(loadWeek)
   const [shifts] = useState(loadShifts)
-  const [savings] = useState(loadSavings)
   const [money] = useState(loadMoney)
   const [habits, setHabits] = useState<HabitsData>(loadHabits)
 
@@ -36,11 +35,7 @@ export function TodayTab() {
   }, [habits])
 
   const title = formatDayLong(today)
-  const line = moneyLine(savings, money, now)
-  const shiftsText =
-    line.shiftsLeft === null
-      ? ''
-      : ` · ${line.shiftsLeft} ${plural(line.shiftsLeft, 'смена', 'смены', 'смен')} до цели`
+  const forecast = turkeyForecast(money, shifts, today)
 
   return (
     <section className={styles.today}>
@@ -49,11 +44,11 @@ export function TodayTab() {
       <div className={styles.grid}>
         <div className={styles.column}>
           <TodayShiftCard focus={shiftFocus(today, shifts)} shifts={shifts} />
-          <p className={styles.moneyLine}>
-            <span className={styles.moneyLabel}>{line.title}:</span> {formatMoney(line.saved)} из{' '}
-            {formatMoney(line.target)}
-            {shiftsText}
-          </p>
+          <div className={styles.moneyLine}>
+            <span className={styles.moneyLabel}>{money.settings.goal.title}:</span> {formatMoney(forecast.progress.saved)} из{' '}
+            {formatMoney(forecast.progress.target)}
+            <ForecastPhrase forecast={forecast} />
+          </div>
         </div>
 
         <div className={styles.column}>

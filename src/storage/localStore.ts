@@ -23,3 +23,12 @@ export function writeJson(key: string, value: unknown): void {
     console.error(`Не удалось сохранить «${key}»`, error)
   }
 }
+
+// Удаляет значение по ключу (например, после переноса старых данных в новый формат).
+export function removeKey(key: string): void {
+  try {
+    localStorage.removeItem(key)
+  } catch {
+    // Хранилище недоступно — удалять нечего.
+  }
+}
