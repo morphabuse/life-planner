@@ -5,6 +5,8 @@ import type { Habit } from '../../types'
 import { Button, Card } from '../../components/ui'
 import { AUTO_SHIFTS_NAME, streakText } from '../habits/habitsLogic'
 import type { Streak } from '../habits/habitsLogic'
+import type { BestStreak } from './todayLogic'
+import { plural } from '../money/format'
 import styles from '../habits/HabitsTab.module.css'
 
 // «Серия: 3 смены» → «серия: 3 смены» — после тире с маленькой буквы.
@@ -16,16 +18,22 @@ interface Props {
   streakOf: (id: string) => Streak
   shiftStreak: Streak
   onToggle: (id: string) => void
+  best: BestStreak | null // лучшая текущая серия
 }
 
-export function TodayHabitsCard({ habits, isDoneToday, streakOf, shiftStreak, onToggle }: Props) {
+export function TodayHabitsCard({ habits, isDoneToday, streakOf, shiftStreak, onToggle, best }: Props) {
   const done = habits.filter((h) => isDoneToday(h.id)).length
 
   return (
     <Card
       compact
       title="Привычки"
-      subtitle={habits.length > 0 ? `Сегодня ${done} из ${habits.length}` : 'Добавь привычки во вкладке «Привычки»'}
+      subtitle={
+        (habits.length > 0 ? `Сегодня ${done} из ${habits.length}` : 'Добавь привычки во вкладке «Привычки»') +
+        (best
+          ? ` · лучшая серия: ${best.name} — ${best.current} ${best.unit === 'day' ? plural(best.current, 'день', 'дня', 'дней') : plural(best.current, 'смена', 'смены', 'смен')}`
+          : '')
+      }
     >
       <ul className={styles.todayList}>
         {habits.map((habit) => {

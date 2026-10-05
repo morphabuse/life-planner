@@ -50,18 +50,104 @@
   line-height: var(--leading-normal);
 }
 
-/* ---------- Деньги одной строкой ---------- */
+/* ---------- Деньги ---------- */
 
-.moneyLine {
-  padding: var(--space-3) var(--space-5);
-  background: var(--color-surface);
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-lg);
+.spendLine {
   font-size: var(--text-sm);
 }
 
-.moneyLabel {
+.spendValue {
+  font-size: var(--text-md);
   font-weight: var(--weight-semibold);
+}
+
+.caption {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+/* ---------- Мини-неделя ---------- */
+
+.week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.weekDay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-1);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.weekName {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.weekNumber {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.weekTag {
+  min-height: 1lh;
+  overflow: hidden;
+  max-width: 100%;
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weekToday {
+  border-color: var(--color-accent);
+  outline: var(--border-width) solid var(--color-accent); /* двойная рамка — сегодня */
+}
+
+.dayShift {
+  background: var(--status-shift-bg);
+  border-color: var(--status-shift-border);
+  color: var(--status-shift-fg);
+}
+
+.dayMissed {
+  background: var(--status-missed-bg);
+  border-color: var(--status-missed-border);
+  color: var(--status-missed-fg);
+}
+
+.dayLeave {
+  background: var(--status-leave-bg);
+  border-color: var(--status-leave-border);
+  color: var(--status-leave-fg);
+}
+
+.dayOff {
+  background: var(--status-off-bg);
+  border-color: var(--status-off-border);
+  color: var(--status-off-fg);
+}
+
+.dayShift .weekName,
+.dayMissed .weekName,
+.dayLeave .weekName,
+.dayOff .weekName {
+  color: inherit;
+}
+
+/* На узком экране подпись статуса не помещается — остаётся цвет. */
+@media (max-width: 640px) {
+  .weekTag {
+    display: none;
+  }
 }
 
 /* ---------- Задачи ---------- */
