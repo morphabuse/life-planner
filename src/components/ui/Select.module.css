@@ -1,0 +1,26 @@
+.wrapper {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.select {
+  width: 100%;
+  appearance: none; /* убираем системную стрелку */
+  padding-right: var(--space-8);
+  cursor: pointer;
+}
+
+.sm {
+  height: var(--control-height-sm);
+  font-size: var(--text-sm);
+}
+
+.chevron {
+  position: absolute;
+  top: 50%;
+  right: var(--space-3);
+  transform: translateY(-50%);
+  color: var(--color-text-subtle);
+  pointer-events: none; /* клик проходит сквозь стрелку в сам список */
+}

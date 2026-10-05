@@ -1,0 +1,25 @@
+/* Кнопки бэкапа в шапке. */
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ok,
+.error {
+  font-size: var(--text-sm);
+}
+
+.ok {
+  color: var(--status-success-fg);
+}
+
+.error {
+  color: var(--status-danger-fg);
+}
+
+.hiddenInput {
+  display: none;
+}

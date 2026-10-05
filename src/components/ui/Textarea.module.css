@@ -1,0 +1,13 @@
+/* Отличия от Input: высота по содержимому, отступы со всех сторон, тянется только вниз. */
+.textarea {
+  height: auto;
+  min-height: calc(var(--space-12) * 2);
+  padding: var(--space-2) var(--space-3);
+  font-family: inherit;
+  line-height: var(--leading-normal);
+  resize: vertical;
+}
+
+.field {
+  width: 100%;
+}

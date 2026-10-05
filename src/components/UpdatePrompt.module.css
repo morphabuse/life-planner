@@ -1,0 +1,23 @@
+/* Плашка внизу экрана — по центру, тонкая рамка, без тени (как карточки). */
+.prompt {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-4);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: max-content;
+  max-width: calc(100% - var(--space-8));
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  background: var(--color-surface-raised);
+  border: var(--border-width) solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  transform: translateX(-50%);
+}
+
+.text {
+  min-width: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}

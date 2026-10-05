@@ -1,0 +1,66 @@
+/* Глобальные стили: сброс, шрифт, фокус. Только токены из tokens.css. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--color-bg);
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  /* Цифры одинаковой ширины: суммы и даты в столбик не «пляшут». */
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+h1,
+h2,
+h3 {
+  line-height: var(--leading-tight);
+  font-weight: var(--weight-semibold);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* Видимый фокус — только при работе с клавиатуры (мышью рамки не будет). */
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Галочки и прочие нативные элементы — в цвет акцента. */
+input[type='checkbox'] {
+  accent-color: var(--color-accent);
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+/* Значки календаря/часов в нативных полях — нормального цвета в тёмной теме. */
+input[type='date'],
+input[type='time'],
+input[type='month'] {
+  color-scheme: inherit;
+}

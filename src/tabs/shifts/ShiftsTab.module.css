@@ -1,0 +1,262 @@
+/* Стили вкладки «Смены». Только токены из src/styles/tokens.css. */
+
+.shifts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.caption {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.okText,
+.errorText {
+  font-size: var(--text-sm);
+}
+
+.okText {
+  color: var(--status-success-fg);
+}
+
+.errorText {
+  color: var(--status-danger-fg);
+}
+
+/* ---------- Ближайшая смена ---------- */
+
+.nextDate {
+  margin-bottom: var(--space-1);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.nextWhen {
+  color: var(--color-text-muted);
+  font-weight: var(--weight-regular);
+}
+
+.sleep {
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-md);
+}
+
+.sleepTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.sleepList {
+  margin: 0;
+  padding-left: var(--space-5);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+/* ---------- Календарь ---------- */
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr); /* 7 колонок — дни недели */
+  gap: var(--space-1);
+}
+
+.weekday {
+  padding-bottom: var(--space-1);
+  color: var(--color-text-subtle);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  text-align: center;
+}
+
+.day {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0; /* разрешаем ячейке сжиматься, иначе длинный текст раздвинет сетку */
+  min-height: 60px;
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+.day:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-muted);
+}
+
+.dayNumber {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.dayTime,
+.dayTag {
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+/* Цвета статусов — токены --status-*. */
+.dayShift,
+.dayShift:hover {
+  background: var(--status-shift-bg);
+  border-color: var(--status-shift-border);
+  color: var(--status-shift-fg);
+}
+
+.dayMissed,
+.dayMissed:hover {
+  background: var(--status-missed-bg);
+  border-color: var(--status-missed-border);
+  color: var(--status-missed-fg);
+}
+
+.dayMissed .dayTime {
+  text-decoration: line-through; /* время зачёркнуто: смена не состоялась */
+}
+
+.dayLeave,
+.dayLeave:hover {
+  background: var(--status-leave-bg);
+  border-color: var(--status-leave-border);
+  color: var(--status-leave-fg);
+}
+
+.dayOff,
+.dayOff:hover {
+  background: var(--status-off-bg);
+  border-color: var(--status-off-border);
+  color: var(--status-off-fg);
+}
+
+.today .dayNumber {
+  /* сегодняшний день — номер в акцентном кружке */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  margin: -1px 0 0 -4px;
+  padding: 0 var(--space-1);
+  background: var(--color-accent);
+  border-radius: var(--radius-full);
+  color: var(--color-on-accent);
+}
+
+.selected,
+.selected:hover {
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ---------- Итог месяца ---------- */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.statValue {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.statBad {
+  color: var(--status-danger-fg);
+}
+
+/* Подсказки про деньги под итогами месяца. */
+.moneyNotes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-4);
+}
+
+.statBadText {
+  color: var(--status-danger-fg);
+  font-size: var(--text-sm);
+}
+
+/* ---------- Правка дня ---------- */
+
+.statusButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* ---------- Выбор времени ---------- */
+
+.timePicker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.customTime {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ---------- Помощник 2/2 ---------- */
+
+.fillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.fillActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}

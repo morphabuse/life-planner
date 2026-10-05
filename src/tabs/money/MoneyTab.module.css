@@ -1,0 +1,444 @@
+/* Стили вкладки «Деньги». Только токены из src/styles/tokens.css. */
+
+.money {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.caption {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.error {
+  margin-top: var(--space-2);
+  color: var(--status-danger-fg);
+  font-size: var(--text-sm);
+}
+
+.okText {
+  color: var(--status-success-fg);
+  font-size: var(--text-sm);
+}
+
+.danger {
+  color: var(--status-danger-fg);
+  font-size: inherit;
+}
+
+.positive {
+  color: var(--status-success-fg);
+}
+
+.hiddenInput {
+  display: none;
+}
+
+/* ---------- Формы ---------- */
+
+.formRow {
+  display: flex;
+  flex-wrap: wrap; /* на узком экране поля переносятся на новую строку */
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.formRowSpaced {
+  margin-top: var(--space-4);
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+/* ---------- Итоги копилки ---------- */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+.statLabel {
+  margin-bottom: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.statValue {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.progressCaption {
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+/* ---------- Выбор месяца ---------- */
+
+.monthNav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.monthHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+}
+
+.monthTitle {
+  font-size: var(--text-lg);
+}
+
+.monthButtons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ---------- Конверты ---------- */
+
+.envelopes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.envelope {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.envelopeHeader {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.envelopeName {
+  font-weight: var(--weight-semibold);
+}
+
+.envelopeNumbers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+}
+
+.envelopeValue {
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+}
+
+.envelopeNote {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+/* ---------- Лимиты ---------- */
+
+.limits {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.limit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.limitHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.limitName {
+  flex: 1;
+  min-width: 100px;
+  font-weight: var(--weight-medium);
+}
+
+.limitHeader .caption,
+.limitHeader .danger {
+  font-size: var(--text-sm);
+}
+
+.limitEditList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+}
+
+.limitEditRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.limitInput {
+  width: 130px;
+  height: var(--control-height-sm);
+  font-size: var(--text-sm);
+}
+
+.limitAddRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+/* ---------- Операции по карте ---------- */
+
+.transactions {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.transaction {
+  display: grid;
+  /* дата | назначение (тянется) | категория | сумма */
+  grid-template-columns: 48px minmax(0, 1fr) 170px 110px;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.transaction:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.quiet {
+  color: var(--color-text-subtle);
+}
+
+.txDate {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.txPurpose {
+  overflow: hidden;
+  font-size: var(--text-sm);
+  text-overflow: ellipsis; /* длинное назначение обрезаем «…», полностью — во всплывающей подсказке */
+  white-space: nowrap;
+}
+
+.txCategory {
+  width: 100%;
+}
+
+.txAmount {
+  font-weight: var(--weight-medium);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* На узком экране: назначение на всю строку, под ним категория и сумма. */
+@media (max-width: 640px) {
+  .transaction {
+    /* сумма — фиксированной ширины, чтобы списки категорий были одинаковыми */
+    grid-template-columns: 48px minmax(0, 1fr) 104px;
+  }
+
+  .txPurpose {
+    grid-column: 2 / 4;
+  }
+
+  .txCategory {
+    grid-column: 2;
+  }
+}
+
+/* ---------- Загрузка выписки ---------- */
+
+/* Большая зона «перетащи PDF сюда». Пунктирная рамка — привычный знак «сюда можно бросить файл». */
+.dropZone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-6);
+  border: var(--border-width) dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  text-align: center;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.dropZoneActive {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.dropIcon {
+  color: var(--color-text-muted);
+}
+
+.dropTitle {
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+}
+
+.dropZone > button {
+  margin-top: var(--space-2);
+}
+
+.importCheck {
+  margin-top: var(--space-3);
+}
+
+.importKind {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.importSummary {
+  margin-top: var(--space-3);
+}
+
+.candidates {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: var(--scroll-list-max-height);
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3);
+  overflow-y: auto; /* в выписке за 3 месяца — десятки записей */
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  list-style: none;
+}
+
+.candidate {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+}
+
+.candidateAmount {
+  color: var(--status-success-fg);
+  font-weight: var(--weight-medium);
+}
+
+.candidateMinus {
+  font-weight: var(--weight-medium);
+}
+
+/* ---------- С чего начать ---------- */
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.stepNumber {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-6);
+  height: var(--space-6);
+  border-radius: var(--radius-full);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.stepDone {
+  background: var(--status-off-bg);
+  color: var(--status-success-fg);
+}
+
+.stepBody {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.stepTitle {
+  font-weight: var(--weight-semibold);
+}
+
+/* ---------- История пополнений ---------- */
+
+.history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.historyItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) 0;
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.historyItem:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.historyDate {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.historyAmount {
+  flex: 1; /* занимает всё свободное место, кнопка уезжает вправо */
+  color: var(--status-success-fg);
+  font-weight: var(--weight-medium);
+}
+
+.historyMinus {
+  color: var(--color-text);
+}

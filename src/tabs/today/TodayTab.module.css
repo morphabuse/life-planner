@@ -1,0 +1,97 @@
+/* Стили вкладки «Сегодня». Только токены из src/styles/tokens.css. */
+
+.today {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.title {
+  font-size: var(--text-lg);
+}
+
+/* Две колонки на компьютере, одна — на телефоне. */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+@media (min-width: 760px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+/* ---------- Смена ---------- */
+
+.sleepTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.sleepList {
+  margin: 0;
+  padding-left: var(--space-5);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+/* ---------- Деньги одной строкой ---------- */
+
+.moneyLine {
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+}
+
+.moneyLabel {
+  font-weight: var(--weight-semibold);
+}
+
+/* ---------- Задачи ---------- */
+
+.tasks {
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.task {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--control-height-sm);
+  cursor: pointer;
+}
+
+.taskDone {
+  color: var(--color-text-subtle);
+  text-decoration: line-through;
+}
+
+.addForm {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.addInput {
+  flex: 1;
+  height: var(--control-height-sm);
+  font-size: var(--text-sm);
+}

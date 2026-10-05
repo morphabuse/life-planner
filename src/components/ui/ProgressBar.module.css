@@ -1,0 +1,22 @@
+.track {
+  height: var(--space-2);
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition:
+    width var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+.accent {
+  background: var(--color-accent);
+}
+
+.danger {
+  background: var(--status-danger-fg);
+}

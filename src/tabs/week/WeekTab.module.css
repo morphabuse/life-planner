@@ -1,0 +1,188 @@
+/* Стили вкладки «Неделя». Только токены из src/styles/tokens.css. */
+
+.week {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.caption {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+/* ---------- Заголовок и навигация ---------- */
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.headings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.weekTitle {
+  font-size: var(--text-lg);
+}
+
+.navButtons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ---------- Карточка дня ---------- */
+
+.dayTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Полоса слева у дней со сменой. Толщина — шаг сетки 4 px.
+   Рамка стала толще на 3 px — столько же убираем из отступа,
+   чтобы текст стоял ровно по одной линии со всеми карточками. */
+.stripeShift,
+.stripeMissed {
+  border-left-width: var(--space-1);
+  padding-left: calc(var(--space-5) - var(--space-1) + var(--border-width));
+}
+
+.stripeShift {
+  border-left-color: var(--status-shift-fg);
+}
+
+.stripeMissed {
+  border-left-color: var(--status-missed-fg);
+}
+
+/* Сегодня — акцентная рамка, но левую полосу статуса не перекрываем. */
+.today {
+  border-top-color: var(--color-accent);
+  border-right-color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+.today:not(.stripeShift):not(.stripeMissed) {
+  border-left-color: var(--color-accent);
+}
+
+.badgeTime {
+  margin-left: var(--space-1);
+  font-weight: var(--weight-regular);
+}
+
+/* У «не вышел» время зачёркнуто: смена не состоялась. Цвет плашки — из Badge. */
+.stripeMissed .badgeTime {
+  text-decoration: line-through;
+}
+
+/* ---------- Задачи ---------- */
+
+.tasks {
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+}
+
+.task {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-height-sm);
+}
+
+.taskLabel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+}
+
+.taskDone {
+  color: var(--color-text-subtle);
+  text-decoration: line-through;
+}
+
+.addForm {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.addInput {
+  flex: 1;
+  height: var(--control-height-sm);
+  font-size: var(--text-sm);
+}
+
+/* ---------- Итог недели ---------- */
+
+.reviewGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-5);
+}
+
+@media (min-width: 640px) {
+  .reviewGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.reviewBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.reviewLabel {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.reviewValue {
+  font-weight: var(--weight-semibold);
+}
+
+.reviewHabits {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reviewHabits li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 var(--space-3);
+}
+
+.reviewHabitName {
+  font-size: var(--text-sm);
+}
+
+.reviewNotes {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+@media (min-width: 640px) {
+  .reviewNotes {
+    grid-template-columns: 1fr 1fr;
+  }
+}

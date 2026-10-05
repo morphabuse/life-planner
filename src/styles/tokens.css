@@ -1,0 +1,192 @@
+/* =====================================================================
+   Дизайн-токены — ЕДИНСТВЕННОЕ место, где задаются цвета, отступы,
+   радиусы, шрифты и анимации. Компоненты используют только var(--…),
+   никаких цветов «на месте».
+
+   Тёмная тема — те же имена с другими значениями. Включается:
+   - автоматически, если в системе тёмная тема и тема не выбрана вручную;
+   - вручную: <html data-theme="dark">.
+   Блок тёмных значений повторяется дважды (для этих двух случаев) —
+   в CSS нельзя «переиспользовать» набор переменных, поэтому меняйте оба.
+   ===================================================================== */
+
+:root {
+  /* ---------- Отступы: шаг 4 px ---------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ---------- Радиусы ---------- */
+  --radius-sm: 6px; /* мелкие элементы: плашки, ячейки */
+  --radius-md: 8px; /* кнопки, поля */
+  --radius-lg: 12px; /* карточки */
+  --radius-full: 999px; /* «таблетки» */
+
+  /* ---------- Шрифт и типографика ---------- */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --text-xs: 12px; /* мелкие подписи в ячейках */
+  --text-sm: 13px; /* подписи, подсказки */
+  --text-base: 15px; /* основной текст */
+  --text-md: 16px; /* подзаголовок (заголовок карточки) */
+  --text-lg: 20px; /* заголовок раздела */
+  --text-xl: 28px; /* крупные числа */
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+
+  /* ---------- Размеры ---------- */
+  --content-max-width: 880px;
+  --control-height-sm: 32px;
+  --control-height-md: 38px;
+  --scroll-list-max-height: 320px; /* длинные списки внутри карточки прокручиваются */
+  --border-width: 1px;
+  --focus-ring-width: 2px;
+
+  /* ---------- Анимация ---------- */
+  --transition-fast: 150ms ease;
+
+  /* ---------- Цвета: светлая тема ---------- */
+  color-scheme: light;
+
+  /* Нейтральные тёплые серые */
+  --color-bg: #f6f5f2; /* фон страницы */
+  --color-surface: #ffffff; /* карточки */
+  --color-surface-muted: #efede8; /* вложенные блоки, сегменты, hover */
+  --color-surface-raised: #ffffff; /* выбранный сегмент поверх --color-surface-muted */
+  --color-border: #e3e0d9;
+  --color-border-strong: #cfcac0;
+  --color-text: #2a2825;
+  --color-text-muted: #6b665e;
+  --color-text-subtle: #99938a;
+
+  /* Акцент — спокойный синий */
+  --color-accent: #3a6ea5;
+  --color-accent-hover: #305d8c;
+  --color-accent-soft: #e5edf6;
+  --color-on-accent: #ffffff;
+  --color-focus: #3a6ea5;
+
+  /* Статусы: фон / текст / рамка. Приглушённые, но различимые. */
+  --status-shift-bg: #e2e7f2;
+  --status-shift-fg: #34477a;
+  --status-shift-border: #b8c3dc;
+
+  --status-missed-bg: #f6e3e0;
+  --status-missed-fg: #973a2e;
+  --status-missed-border: #e2b9b2;
+
+  --status-leave-bg: #f4eadb;
+  --status-leave-fg: #85581d;
+  --status-leave-border: #e0c9a4;
+
+  --status-off-bg: #e6eee2;
+  --status-off-fg: #4a6b42;
+  --status-off-border: #c3d6bb;
+
+  /* Ошибка / превышение лимита */
+  --status-danger-bg: #f8e4e1;
+  --status-danger-fg: #a83a2c;
+  --status-danger-border: #e6b6ae;
+
+  /* Успех / положительные суммы */
+  --status-success-fg: #3f7142;
+}
+
+/* ---------- Тёмная тема: по системе (если не выбрана светлая вручную) ---------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --color-bg: #1a1917;
+    --color-surface: #22211f;
+    --color-surface-muted: #2b2a27;
+    --color-surface-raised: #3a3834;
+    --color-border: #35332f;
+    --color-border-strong: #4a4741;
+    --color-text: #ebe9e5;
+    --color-text-muted: #a7a299;
+    --color-text-subtle: #7b766d;
+
+    --color-accent: #7fa6d3;
+    --color-accent-hover: #97b7dc;
+    --color-accent-soft: #263241;
+    --color-on-accent: #14181d;
+    --color-focus: #7fa6d3;
+
+    --status-shift-bg: #27304a;
+    --status-shift-fg: #b4c2e6;
+    --status-shift-border: #3b4868;
+
+    --status-missed-bg: #3d2522;
+    --status-missed-fg: #e6a59b;
+    --status-missed-border: #5c3530;
+
+    --status-leave-bg: #3a2f20;
+    --status-leave-fg: #dfbd86;
+    --status-leave-border: #574529;
+
+    --status-off-bg: #253123;
+    --status-off-fg: #a6c69c;
+    --status-off-border: #384b34;
+
+    --status-danger-bg: #3d2522;
+    --status-danger-fg: #e8968a;
+    --status-danger-border: #5c3530;
+
+    --status-success-fg: #8fbe8a;
+  }
+}
+
+/* ---------- Тёмная тема: выбрана вручную ---------- */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-bg: #1a1917;
+  --color-surface: #22211f;
+  --color-surface-muted: #2b2a27;
+  --color-surface-raised: #3a3834;
+  --color-border: #35332f;
+  --color-border-strong: #4a4741;
+  --color-text: #ebe9e5;
+  --color-text-muted: #a7a299;
+  --color-text-subtle: #7b766d;
+
+  --color-accent: #7fa6d3;
+  --color-accent-hover: #97b7dc;
+  --color-accent-soft: #263241;
+  --color-on-accent: #14181d;
+  --color-focus: #7fa6d3;
+
+  --status-shift-bg: #27304a;
+  --status-shift-fg: #b4c2e6;
+  --status-shift-border: #3b4868;
+
+  --status-missed-bg: #3d2522;
+  --status-missed-fg: #e6a59b;
+  --status-missed-border: #5c3530;
+
+  --status-leave-bg: #3a2f20;
+  --status-leave-fg: #dfbd86;
+  --status-leave-border: #574529;
+
+  --status-off-bg: #253123;
+  --status-off-fg: #a6c69c;
+  --status-off-border: #384b34;
+
+  --status-danger-bg: #3d2522;
+  --status-danger-fg: #e8968a;
+  --status-danger-border: #5c3530;
+
+  --status-success-fg: #8fbe8a;
+}

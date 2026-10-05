@@ -1,0 +1,97 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 24px;
+  padding: 0 var(--space-2);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}
+
+.icon {
+  display: inline-flex;
+}
+
+.dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+/* ---------- Тона (общие для плашки и точки) ---------- */
+
+.neutral {
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.accent {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.shift {
+  background: var(--status-shift-bg);
+  border-color: var(--status-shift-border);
+  color: var(--status-shift-fg);
+}
+
+.missed {
+  background: var(--status-missed-bg);
+  border-color: var(--status-missed-border);
+  color: var(--status-missed-fg);
+}
+
+.leave {
+  background: var(--status-leave-bg);
+  border-color: var(--status-leave-border);
+  color: var(--status-leave-fg);
+}
+
+.off {
+  background: var(--status-off-bg);
+  border-color: var(--status-off-border);
+  color: var(--status-off-fg);
+}
+
+.danger {
+  background: var(--status-danger-bg);
+  border-color: var(--status-danger-border);
+  color: var(--status-danger-fg);
+}
+
+/* У точки фон — насыщенный цвет текста статуса, чтобы кружок было видно. */
+.dot.shift {
+  background: var(--status-shift-fg);
+}
+
+.dot.missed {
+  background: var(--status-missed-fg);
+}
+
+.dot.leave {
+  background: var(--status-leave-fg);
+}
+
+.dot.off {
+  background: var(--status-off-fg);
+}
+
+.dot.danger {
+  background: var(--status-danger-fg);
+}
+
+.dot.accent {
+  background: var(--color-accent);
+}
+
+.dot.neutral {
+  background: var(--color-text-subtle);
+}
