@@ -1,11 +1,9 @@
-// Панель отметки выбранного дня: статус и время смены.
+// Панель отметки выбранного дня: статус (смена, не вышел, отгул, выходной).
 import { X } from 'lucide-react'
 import type { DayEntry, DayStatus } from '../../types'
 import { Button, Card, StatusDot } from '../../components/ui'
 import { formatDayLong } from '../../utils/date'
-import { DEFAULT_SHIFT_TIME, formatTime } from '../../utils/shiftTime'
-import { STATUS_LABELS, hasTime } from './schedule'
-import { TimePicker } from './TimePicker'
+import { STATUS_LABELS } from './schedule'
 import styles from './ShiftsTab.module.css'
 
 const STATUSES: DayStatus[] = ['shift', 'missed', 'leave', 'off']
@@ -18,21 +16,7 @@ interface Props {
 }
 
 export function DayEditor({ date, entry, onChange, onClose }: Props) {
-  function chooseStatus(status: DayStatus) {
-    if (status === 'shift' || status === 'missed') {
-      // Время сохраняем, если оно уже было (например, смена → «не вышел»).
-      const time = entry && hasTime(entry) ? entry.time : DEFAULT_SHIFT_TIME
-      onChange({ status, time })
-    } else {
-      onChange({ status })
-    }
-  }
-
-  let description = 'День не отмечен — смены нет.'
-  if (entry) {
-    description = STATUS_LABELS[entry.status]
-    if (hasTime(entry)) description += `, ${formatTime(entry.time)}`
-  }
+  const description = entry ? STATUS_LABELS[entry.status] : 'День не отмечен — смены нет.'
 
   const title = formatDayLong(date)
 
@@ -58,7 +42,7 @@ export function DayEditor({ date, entry, onChange, onClose }: Props) {
             size="sm"
             icon={<StatusDot tone={status} />}
             aria-pressed={entry?.status === status}
-            onClick={() => chooseStatus(status)}
+            onClick={() => onChange({ status })}
           >
             {STATUS_LABELS[status]}
           </Button>
@@ -68,13 +52,6 @@ export function DayEditor({ date, entry, onChange, onClose }: Props) {
         </Button>
       </div>
 
-      {/* Время показываем только для смены и «не вышел». */}
-      {entry && hasTime(entry) && (
-        <TimePicker
-          value={entry.time}
-          onChange={(time) => onChange({ status: entry.status, time })}
-        />
-      )}
     </Card>
   )
 }

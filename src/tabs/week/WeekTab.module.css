@@ -74,16 +74,6 @@
   border-left-color: var(--color-accent);
 }
 
-.badgeTime {
-  margin-left: var(--space-1);
-  font-weight: var(--weight-regular);
-}
-
-/* У «не вышел» время зачёркнуто: смена не состоялась. Цвет плашки — из Badge. */
-.stripeMissed .badgeTime {
-  text-decoration: line-through;
-}
-
 /* ---------- Задачи ---------- */
 
 .tasks {

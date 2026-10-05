@@ -1,7 +1,7 @@
 // Вкладка «Смены»: ближайшая смена с подсказкой по сну, календарь месяца
 // с ручной отметкой дней, итоги месяца и помощник «Заполнить 2/2».
 import { useEffect, useState } from 'react'
-import type { DayEntry, ShiftTime, ShiftsData } from '../../types'
+import type { DayEntry, ShiftsData } from '../../types'
 import { loadShifts, saveShifts } from '../../storage/shiftsStorage'
 import { loadMoney } from '../../storage/moneyStorage'
 // Денежную логику не дублируем — берём из вкладки «Деньги».
@@ -50,8 +50,8 @@ export function ShiftsTab() {
   }
 
   // Помощник 2/2. Возвращает, сколько поставлено и пропущено, — для сообщения в форме.
-  function fill(from: string, to: string, time: ShiftTime) {
-    const result = fillTwoTwo(data, from, to, time)
+  function fill(from: string, to: string) {
+    const result = fillTwoTwo(data, from, to)
     setData(result.data)
     return result
   }

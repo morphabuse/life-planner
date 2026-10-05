@@ -5,7 +5,6 @@
 // Новый формат: просто список отмеченных дней.
 import type { DayEntry, ShiftsData } from '../types'
 import { addDays, daysBetween } from '../utils/date'
-import { DEFAULT_SHIFT_TIME } from '../utils/shiftTime'
 
 export type LegacyDayKind = 'shift' | 'off' | 'leave'
 
@@ -23,7 +22,7 @@ export function migrateLegacyShifts(legacy: LegacyShiftsData, today: string): Sh
   const days: Record<string, DayEntry> = {}
   const first = legacy.firstShiftDate
 
-  // 1. Дни автографика 2/2 → отмеченные смены 22:00–10:00.
+  // 1. Дни автографика 2/2 → отмеченные смены.
   //    Выходные по автографику не записываем: неотмеченный день и так = «смены нет».
   if (first) {
     // Если первая смена в будущем — год считаем от неё.
@@ -31,15 +30,14 @@ export function migrateLegacyShifts(legacy: LegacyShiftsData, today: string): Sh
     // Даты 'YYYY-MM-DD' можно сравнивать как строки — порядок совпадает с календарным.
     for (let date = first; date <= until; date = addDays(date, 1)) {
       if (daysBetween(first, date) % 4 < 2) {
-        days[date] = { status: 'shift', time: { ...DEFAULT_SHIFT_TIME } }
+        days[date] = { status: 'shift' }
       }
     }
   }
 
   // 2. Ручные правки переносим поверх — они были важнее автографика.
   for (const [date, kind] of Object.entries(legacy.overrides)) {
-    days[date] =
-      kind === 'shift' ? { status: 'shift', time: { ...DEFAULT_SHIFT_TIME } } : { status: kind }
+    days[date] = { status: kind }
   }
 
   return { days }

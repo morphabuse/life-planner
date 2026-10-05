@@ -3,7 +3,7 @@ import { BedDouble } from 'lucide-react'
 import type { ShiftsData } from '../../types'
 import { Card } from '../../components/ui'
 import { addDays, daysBetween, formatDayLong, formatDayShort } from '../../utils/date'
-import { endsNextDay, formatTime } from '../../utils/shiftTime'
+import { SHIFT_HOURS } from './sleep'
 import { sleepTips } from './sleep'
 import styles from './ShiftsTab.module.css'
 
@@ -27,10 +27,6 @@ export function NextShiftCard({ nextShift, data, today }: Props) {
   // «сегодня» / «завтра» / «через 3 дн.»
   const inDays = daysBetween(today, nextShift)
   const when = inDays === 0 ? 'сегодня' : inDays === 1 ? 'завтра' : `через ${inDays} дн.`
-  // Если смена заканчивается на следующий день — уточняем, какого числа.
-  const ends = endsNextDay(entry.time)
-    ? `, до ${entry.time.end} ${formatDayShort(addDays(nextShift, 1))}`
-    : ''
   const dayTitle = formatDayLong(nextShift)
 
   return (
@@ -40,8 +36,7 @@ export function NextShiftCard({ nextShift, data, today }: Props) {
         <span className={styles.nextWhen}> · {when}</span>
       </p>
       <p className={styles.caption}>
-        Смена {formatTime(entry.time)}
-        {ends}
+        Смена {SHIFT_HOURS}, до утра {formatDayShort(addDays(nextShift, 1))}
       </p>
 
       <div className={styles.sleep}>

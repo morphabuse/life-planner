@@ -9,7 +9,6 @@ import type {
   HabitsData,
   SalarySplit,
   Transaction,
-  ShiftTime,
   ShiftsData,
   Task,
   WeekData,
@@ -122,19 +121,18 @@ export function isWeekData(value: unknown): value is Omit<WeekData, 'reviews'> &
 
 // ---------- Смены: текущий формат ----------
 
-// Строка 'HH:MM' от 00:00 до 23:59.
-export function isTimeString(value: unknown): value is string {
-  return typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value)
-}
-
-export function isShiftTime(value: unknown): value is ShiftTime {
-  return isObject(value) && isTimeString(value.start) && isTimeString(value.end)
-}
-
+// День смен. Старые записи могут содержать время (time) — оно больше не нужно и отбрасывается
+// при загрузке (toDayEntry), поэтому здесь его не проверяем.
 export function isDayEntry(value: unknown): value is DayEntry {
-  if (!isObject(value)) return false
-  if (value.status === 'shift' || value.status === 'missed') return isShiftTime(value.time)
-  return value.status === 'leave' || value.status === 'off'
+  return (
+    isObject(value) &&
+    (value.status === 'shift' || value.status === 'missed' || value.status === 'leave' || value.status === 'off')
+  )
+}
+
+// Только статус — без старого поля time.
+export function toDayEntry(entry: DayEntry): DayEntry {
+  return { status: entry.status }
 }
 
 export function isShiftsData(value: unknown): value is ShiftsData {

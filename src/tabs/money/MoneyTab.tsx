@@ -19,7 +19,6 @@ import { loadMoney, saveMoney } from '../../storage/moneyStorage'
 import { loadShifts, saveShifts } from '../../storage/shiftsStorage'
 import { Button, Card } from '../../components/ui'
 import { addDays, todayIso } from '../../utils/date'
-import { DEFAULT_SHIFT_TIME } from '../../utils/shiftTime'
 import {
   ACCOUNT_LABELS,
   allCategories,
@@ -97,7 +96,7 @@ function markShifts(shifts: ShiftsData, dates: string[]): { shifts: ShiftsData; 
   let marked = 0
   for (const date of dates) {
     if (days[date]) continue
-    days[date] = { status: 'shift', time: { ...DEFAULT_SHIFT_TIME } }
+    days[date] = { status: 'shift' }
     marked++
   }
   return { shifts: marked > 0 ? { days } : shifts, marked }

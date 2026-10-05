@@ -1,8 +1,7 @@
 // Календарь одного месяца: дни раскрашены по статусу, по клику день выбирается.
 import type { DayStatus, ShiftsData } from '../../types'
 import { daysInMonth, formatDayShort, makeIso, weekdayMondayFirst } from '../../utils/date'
-import { formatTime, formatTimeShort } from '../../utils/shiftTime'
-import { STATUS_LABELS, hasTime } from './schedule'
+import { STATUS_LABELS } from './schedule'
 import styles from './ShiftsTab.module.css'
 
 const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
@@ -55,10 +54,9 @@ export function MonthCalendar({ year, monthIndex, data, today, selected, onSelec
           .filter(Boolean)
           .join(' ')
 
-        // Подпись для программ чтения с экрана: «5 октября: Смена 22:00–10:00»
+        // Подпись для программ чтения с экрана: «5 октября: Смена»
         let label = `${formatDayShort(date)}: `
         label += entry ? STATUS_LABELS[entry.status] : 'не отмечен'
-        if (entry && hasTime(entry)) label += ` ${formatTime(entry.time)}`
 
         return (
           <button
@@ -70,10 +68,7 @@ export function MonthCalendar({ year, monthIndex, data, today, selected, onSelec
             aria-pressed={date === selected}
           >
             <span className={styles.dayNumber}>{i + 1}</span>
-            {entry && hasTime(entry) && (
-              <span className={styles.dayTime}>{formatTimeShort(entry.time)}</span>
-            )}
-            {entry && entry.status !== 'shift' && (
+            {entry && (
               <span className={styles.dayTag}>{STATUS_LABELS[entry.status].toLowerCase()}</span>
             )}
           </button>

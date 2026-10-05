@@ -1,6 +1,6 @@
 // Логика смен. Без React — только чистые функции,
 // чтобы этим же пользовалась вкладка «Неделя» (подсветка дней со сменой).
-import type { DayEntry, DayStatus, ShiftTime, ShiftsData } from '../../types'
+import type { DayEntry, DayStatus, ShiftsData } from '../../types'
 import { addDays, daysBetween } from '../../utils/date'
 
 // Подписи статусов для интерфейса.
@@ -13,14 +13,6 @@ export const STATUS_LABELS: Record<DayStatus, string> = {
 
 // Максимум дней, которые помощник 2/2 заполняет за раз (защита от опечатки в годе).
 export const FILL_MAX_DAYS = 366
-
-// Тип записи, у которой есть время (смена или «не вышел»).
-export type TimedEntry = Extract<DayEntry, { time: ShiftTime }>
-
-// Есть ли у записи время. После проверки TypeScript знает, что entry.time существует.
-export function hasTime(entry: DayEntry): entry is TimedEntry {
-  return entry.status === 'shift' || entry.status === 'missed'
-}
 
 export function getEntry(date: string, data: ShiftsData): DayEntry | undefined {
   return data.days[date]
@@ -62,7 +54,6 @@ export function fillTwoTwo(
   data: ShiftsData,
   from: string,
   to: string,
-  time: ShiftTime,
 ): FillResult {
   const days = { ...data.days }
   let added = 0
@@ -72,7 +63,7 @@ export function fillTwoTwo(
     if (days[date]) {
       skipped++
     } else {
-      days[date] = { status: 'shift', time: { ...time } }
+      days[date] = { status: 'shift' }
       added++
     }
   }

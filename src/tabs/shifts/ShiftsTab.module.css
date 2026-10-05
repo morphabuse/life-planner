@@ -107,7 +107,6 @@
   font-weight: var(--weight-semibold);
 }
 
-.dayTime,
 .dayTag {
   font-size: var(--text-xs);
   white-space: nowrap;
@@ -126,10 +125,6 @@
   background: var(--status-missed-bg);
   border-color: var(--status-missed-border);
   color: var(--status-missed-fg);
-}
-
-.dayMissed .dayTime {
-  text-decoration: line-through; /* время зачёркнуто: смена не состоялась */
 }
 
 .dayLeave,
@@ -223,28 +218,6 @@
   gap: var(--space-2);
 }
 
-/* ---------- Выбор времени ---------- */
-
-.timePicker {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  margin-top: var(--space-4);
-}
-
-.presets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.customTime {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-}
-
 /* ---------- Помощник 2/2 ---------- */
 
 .fillRow {
@@ -259,4 +232,11 @@
   align-items: center;
   gap: var(--space-3);
   margin-top: var(--space-5);
+}
+
+/* На узком экране подпись статуса в клетке не помещается — остаётся цвет (как в легенде). */
+@media (max-width: 640px) {
+  .dayTag {
+    display: none;
+  }
 }

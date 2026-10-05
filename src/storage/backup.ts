@@ -15,6 +15,7 @@ import {
   isShiftsData,
   isTransaction,
   isWeekData,
+  toDayEntry,
 } from './validators'
 
 // Метка «это бэкап именно нашего приложения».
@@ -88,6 +89,7 @@ export function describeBackup(backup: BackupFile): string {
       'берётся только сумма цели. '
   }
   if (backup.version === 2) text += 'График 2/2 из него станет отмеченными сменами на год вперёд. '
+  // Время смен в старых бэкапах было — при загрузке оно просто отбрасывается.
   if (missing.length > 0) text += `В нём нет ${missing.join(', ')} — они останутся как есть. `
   if (backup.version < 8 && backup.week) text += 'Итоги недель тоже останутся как есть. '
   return text + (backup.version === 1 ? 'Ничего, кроме цели, не изменится.' : replaced)
@@ -149,7 +151,10 @@ export function parseBackup(text: string): BackupFile {
     if (!isShiftsData(parsed.shifts)) {
       throw new Error('Данные смен в бэкапе повреждены.')
     }
-    shifts = { days: parsed.shifts.days }
+    // Время смены из старых бэкапов (v3–v9) отбрасываем — его больше нет.
+    shifts = {
+      days: Object.fromEntries(Object.entries(parsed.shifts.days).map(([date, entry]) => [date, toDayEntry(entry)])),
+    }
   }
 
   // Задачи недели — с v4.

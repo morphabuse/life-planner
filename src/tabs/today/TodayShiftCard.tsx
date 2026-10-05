@@ -1,10 +1,9 @@
-// Смена сегодня или завтра: время и подсказка по сну (логика — из «Смен»).
+// Смена сегодня или завтра и подсказка по сну (логика — из «Смен»).
 import { BedDouble } from 'lucide-react'
 import type { ShiftsData } from '../../types'
 import { Card } from '../../components/ui'
 import { addDays, formatDayLong, formatDayShort } from '../../utils/date'
-import { endsNextDay, formatTime } from '../../utils/shiftTime'
-import { sleepTips } from '../shifts/sleep'
+import { SHIFT_HOURS, sleepTips } from '../shifts/sleep'
 import type { ShiftFocus } from './todayLogic'
 import styles from './TodayTab.module.css'
 
@@ -27,15 +26,13 @@ export function TodayShiftCard({ focus, shifts }: Props) {
     )
   }
 
-  const { date, when, time } = focus
-  // Если смена кончается на следующий день — уточняем, какого числа.
-  const ends = endsNextDay(time) ? `, до ${time.end} ${formatDayShort(addDays(date, 1))}` : ''
+  const { date, when } = focus
 
   return (
     <Card
       compact
       title={when === 'today' ? 'Сегодня смена' : 'Завтра смена'}
-      subtitle={`${formatTime(time)}${ends}`}
+      subtitle={`${SHIFT_HOURS}, до утра ${formatDayShort(addDays(date, 1))}`}
     >
       <div className={styles.sleepTitle}>
         <BedDouble size={16} aria-hidden="true" />

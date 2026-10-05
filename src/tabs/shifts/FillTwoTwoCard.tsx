@@ -2,24 +2,20 @@
 // уже отмеченные дни не трогает.
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import type { ShiftTime } from '../../types'
 import { Button, Card, Input } from '../../components/ui'
 import { addDays, daysBetween } from '../../utils/date'
-import { DEFAULT_SHIFT_TIME } from '../../utils/shiftTime'
 import { FILL_MAX_DAYS } from './schedule'
 import type { FillResult } from './schedule'
-import { TimePicker } from './TimePicker'
 import styles from './ShiftsTab.module.css'
 
 interface Props {
   today: string
-  onFill: (from: string, to: string, time: ShiftTime) => FillResult
+  onFill: (from: string, to: string) => FillResult
 }
 
 export function FillTwoTwoCard({ today, onFill }: Props) {
   const [from, setFrom] = useState(today)
   const [to, setTo] = useState(() => addDays(today, 30))
-  const [time, setTime] = useState<ShiftTime>(DEFAULT_SHIFT_TIME)
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null)
 
   function handleSubmit(event: FormEvent) {
@@ -30,7 +26,7 @@ export function FillTwoTwoCard({ today, onFill }: Props) {
       return setMessage({ kind: 'error', text: 'Не больше года за раз' })
     }
 
-    const { added, skipped } = onFill(from, to, time)
+    const { added, skipped } = onFill(from, to)
     let text = `Проставлено смен: ${added}.`
     if (skipped > 0) text += ` Уже отмеченных дней не тронуто: ${skipped}.`
     setMessage({ kind: 'ok', text })
@@ -46,7 +42,6 @@ export function FillTwoTwoCard({ today, onFill }: Props) {
           <Input label="С даты" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
           <Input label="По дату" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
         </div>
-        <TimePicker value={time} onChange={setTime} />
         <div className={styles.fillActions}>
           <Button type="submit" variant="primary">
             Заполнить

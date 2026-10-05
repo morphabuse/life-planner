@@ -97,19 +97,10 @@ export type StatementKind = 'card' | 'savings'
 // Статус дня: смена, «не вышел» (смена была, но я не пошёл), отгул, выходной.
 export type DayStatus = 'shift' | 'missed' | 'leave' | 'off'
 
-// Время смены в формате 'HH:MM'.
-// Если end меньше или равно start — смена заканчивается на следующий день (22:00–10:00).
-export interface ShiftTime {
-  start: string
-  end: string
+// Отмеченный день — только статус. Время смены не храним: смена стандартная, 22:00–10:00.
+export interface DayEntry {
+  status: DayStatus
 }
-
-// Отмеченный день. Это «объединение» (union) двух вариантов:
-// у смены и «не вышел» есть время, у отгула и выходного — нет.
-// TypeScript по полю status сам понимает, есть ли у записи time.
-export type DayEntry =
-  | { status: 'shift' | 'missed'; time: ShiftTime }
-  | { status: 'leave' | 'off' }
 
 // ---------- Неделя ----------
 
@@ -153,5 +144,5 @@ export interface HabitsData {
 // Всё, что хранится для вкладки «Смены»: отмеченные дни.
 // Неотмеченный день = смены нет.
 export interface ShiftsData {
-  days: Record<string, DayEntry> // { '2026-10-05': { status: 'shift', time: {...} }, ... }
+  days: Record<string, DayEntry> // { '2026-10-05': { status: 'shift' }, ... }
 }

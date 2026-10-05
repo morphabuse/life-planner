@@ -4,7 +4,7 @@ import { todayIso } from '../utils/date'
 import { readJson, writeJson } from './localStore'
 import { migrateLegacyShifts } from './shiftsMigration'
 import type { LegacyDayKind } from './shiftsMigration'
-import { isDayEntry, isIsoDate, isLegacyDayKind, isObject } from './validators'
+import { isDayEntry, isIsoDate, isLegacyDayKind, isObject, toDayEntry } from './validators'
 
 const KEY = 'planner.shifts'
 
@@ -28,12 +28,17 @@ export function loadShifts(): ShiftsData {
   }
 
   // Новый формат. Берём только записи, прошедшие проверку, — испорченные пропускаем.
+  // Время смены (time) из старых записей отбрасываем и сразу сохраняем без него.
   const days: Record<string, DayEntry> = {}
+  let hadTime = false
   if (isObject(stored.days)) {
     for (const [date, entry] of Object.entries(stored.days)) {
-      if (isIsoDate(date) && isDayEntry(entry)) days[date] = entry
+      if (!isIsoDate(date) || !isDayEntry(entry)) continue
+      if ('time' in entry) hadTime = true
+      days[date] = toDayEntry(entry)
     }
   }
+  if (hadTime) saveShifts({ days })
   return { days }
 }
 

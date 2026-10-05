@@ -5,9 +5,8 @@ import { Moon, Plus, X } from 'lucide-react'
 import type { DayEntry, Task } from '../../types'
 import { Badge, Button, Card, Input } from '../../components/ui'
 import { formatDayLong } from '../../utils/date'
-import { formatTime } from '../../utils/shiftTime'
 // Логику смен не дублируем — берём из вкладки «Смены».
-import { STATUS_LABELS, hasTime } from '../shifts/schedule'
+import { STATUS_LABELS } from '../shifts/schedule'
 import styles from './WeekTab.module.css'
 
 interface Props {
@@ -61,7 +60,6 @@ export function DayCard({ date, isToday, shift, tasks, onAdd, onToggle, onDelete
             icon={shift.status === 'shift' ? <Moon size={13} /> : undefined}
           >
             {STATUS_LABELS[shift.status]}
-            {hasTime(shift) && <span className={styles.badgeTime}>{formatTime(shift.time)}</span>}
           </Badge>
         )
       }
