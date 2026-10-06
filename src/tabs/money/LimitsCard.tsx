@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { Badge, Button, Card, Input, ProgressBar, Select } from '../../components/ui'
 import type { CategorySpending } from './moneyLogic'
-import { formatMoney } from './format'
+import { formatMoney, sinceLabel } from './format'
 import styles from './MoneyTab.module.css'
 
 const NEW_CATEGORY = '+ Новая категория…'
@@ -12,11 +12,12 @@ const NEW_CATEGORY = '+ Новая категория…'
 interface Props {
   items: CategorySpending[]
   categories: string[] // категории трат, на которые можно поставить лимит
+  from: string | null // месяц старта: траты считаются с этой даты (null — весь месяц)
   // Сохранить лимиты; newCategories — новые свои категории, созданные здесь.
   onSave: (limits: Record<string, number>, newCategories: string[]) => void
 }
 
-export function LimitsCard({ items, categories, onSave }: Props) {
+export function LimitsCard({ items, categories, from, onSave }: Props) {
   const [editing, setEditing] = useState(false)
   // Черновик: категория → сумма строкой (так удобнее с полями ввода).
   const [draft, setDraft] = useState<Record<string, string>>({})
@@ -146,6 +147,7 @@ export function LimitsCard({ items, categories, onSave }: Props) {
   return (
     <Card
       title="Траты по категориям"
+      subtitle={from ? sinceLabel(from) : undefined}
       actions={
         <Button variant="text" size="sm" icon={<Pencil size={14} />} onClick={startEditing}>
           Изменить

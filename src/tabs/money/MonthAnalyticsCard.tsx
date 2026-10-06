@@ -5,7 +5,7 @@
 import { Card, ProgressBar } from '../../components/ui'
 import type { SalarySplit } from '../../types'
 import type { MonthAnalytics } from './moneyLogic'
-import { formatMoney, plural } from './format'
+import { formatMoney, plural, sinceLabel } from './format'
 import styles from './MoneyTab.module.css'
 
 interface Props {
@@ -46,15 +46,17 @@ function Row({ name, percent, planned, spent, hasIncome }: {
 }
 
 export function MonthAnalyticsCard({ analytics, split }: Props) {
-  const { income, shifts } = analytics
+  const { income, shifts, from } = analytics
   const hasIncome = income > 0
+  // Месяц старта: доход и траты — только с даты старта.
+  const since = from ? ` · ${sinceLabel(from)}` : ''
   return (
     <Card
       title="Доход и траты за месяц"
       subtitle={
-        hasIncome
+        (hasIncome
           ? `Доход ${formatMoney(income)} за ${shifts} ${plural(shifts, 'смену', 'смены', 'смен')}`
-          : 'Дохода за смены в этом месяце пока нет — видно только траты.'
+          : 'Дохода за смены в этом месяце пока нет — видно только траты.') + since
       }
     >
       <div className={styles.envelopes}>

@@ -120,14 +120,25 @@ export function monthPrefix(year: number, monthIndex: number): string {
   return `${year}-${String(monthIndex + 1).padStart(2, '0')}-`
 }
 
+// С какого дня считать месяц. В месяце, где лежит дата старта, — с даты старта:
+// доход до неё в конверты не идёт, значит и траты до неё сравнивать не с чем
+// (иначе в октябре траты 1–4 числа давали ложный «перерасход»). В остальных месяцах — с 1-го.
+// Возвращает дату 'YYYY-MM-DD' или null (весь месяц).
+export function monthStart(money: MoneyData, prefix: string): string | null {
+  const { start } = money.settings.goal
+  return start.startsWith(prefix) ? start : null
+}
+
 // Траты с карты за месяц по категориям, в рублях. Считаем «чистыми»: списания минус
 // поступления той же категории (возврат за покупку, человек вернул долг по СБП, кешбэк).
 // Если поступлений больше, чем трат, категория даёт 0, а не минус.
 // Доход, переводы между своими счетами и проценты — не траты.
+// В месяце старта — только с даты старта (monthStart).
 export function monthSpendingByCategory(money: MoneyData, prefix: string): Record<string, number> {
+  const from = monthStart(money, prefix) ?? ''
   const netKop: Record<string, number> = {}
   for (const tx of cardTransactions(money)) {
-    if (!tx.date.startsWith(prefix)) continue
+    if (!tx.date.startsWith(prefix) || tx.date < from) continue
     const category = categorize(tx, money.rules)
     if (NOT_SPENDING.has(category)) continue
     netKop[category] = (netKop[category] ?? 0) - tx.amount
@@ -418,10 +429,13 @@ export interface MonthAnalytics {
   lifeSpent: number // траты с карты, кроме «Одежды и ухода», ₽
   clothesPlanned: number
   clothesSpent: number // траты категории «Одежда и уход», ₽
+  from: string | null // месяц старта: доход и траты считаются с этой даты (null — весь месяц)
 }
 
 export function monthAnalytics(money: MoneyData, prefix: string): MonthAnalytics {
-  const incomes = shiftIncomes(money).filter((i) => i.shiftDate.startsWith(prefix))
+  // В месяце старта и доход, и траты — с даты старта, чтобы сравнивать одно и то же время.
+  const from = monthStart(money, prefix)
+  const incomes = shiftIncomes(money).filter((i) => i.shiftDate.startsWith(prefix) && i.shiftDate >= (from ?? ''))
   const income = incomes.reduce((s, i) => s + i.amountKop, 0) / 100
   const spending = monthSpendingByCategory(money, prefix)
   const clothesSpent = spending[CATEGORY_CLOTHES] ?? 0
@@ -436,6 +450,7 @@ export function monthAnalytics(money: MoneyData, prefix: string): MonthAnalytics
     lifeSpent,
     clothesPlanned: (income * split.clothes) / 100,
     clothesSpent,
+    from,
   }
 }
 

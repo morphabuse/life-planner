@@ -40,6 +40,11 @@ export function plural(n: number, one: string, few: string, many: string): strin
   return many
 }
 
+// '2026-10-05' → '05.10' — для подписи «считается с 05.10».
+export function sinceLabel(from: string): string {
+  return `считается с ${from.slice(8, 10)}.${from.slice(5, 7)}`
+}
+
 // '2026-10-04' → '04.10.2026'
 export function formatDate(isoDate: string): string {
   const [year, month, day] = isoDate.split('-')

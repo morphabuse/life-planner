@@ -29,6 +29,7 @@ import {
   merchantKey,
   mergeTransactions,
   monthAnalytics,
+  monthStart,
   monthPrefix,
   removeSavingsCopies,
   shiftIncomes,
@@ -326,7 +327,12 @@ export function MoneyTab() {
             <>
               <TransferCheckCard money={money} />
               <MonthAnalyticsCard analytics={monthAnalytics(money, prefix)} split={money.settings.split} />
-              <LimitsCard items={categorySpending(money, prefix)} categories={spendingCategories(money)} onSave={saveLimits} />
+              <LimitsCard
+                items={categorySpending(money, prefix)}
+                categories={spendingCategories(money)}
+                from={monthStart(money, prefix)}
+                onSave={saveLimits}
+              />
               <TransactionsCard
                 transactions={monthTransactions}
                 rules={money.rules}
