@@ -9,7 +9,6 @@ import type {
   AccountKind,
   BalanceKind,
   BalanceSnapshot,
-  EnvelopeKind,
   MoneyData,
   MoneySettings,
   ShiftsData,
@@ -21,20 +20,25 @@ import { Button, Card } from '../../components/ui'
 import { addDays, todayIso } from '../../utils/date'
 import {
   ACCOUNT_LABELS,
+  addManualIncome,
   allCategories,
   categorySpending,
   dataUntil,
+  defaultIncomeShiftDate,
   incomeShiftDates,
   latestDataMonth,
+  markShiftsByIncome,
   merchantKey,
   mergeTransactions,
   monthAnalytics,
   monthStart,
   monthPrefix,
+  removeManualIncome,
   removeSavingsCopies,
   shiftIncomes,
   spendingCategories,
   statementOperations,
+  toggleTransfer,
 } from './moneyLogic'
 import { turkeyForecast } from './turkeyLogic'
 import type { ParsedStatement } from './statement/parseStatement'
@@ -91,27 +95,6 @@ function rememberAccount(money: MoneyData, parsed: ParsedStatement, kind: Accoun
   }
 }
 
-// Отмечает смену в дни, где пришёл доход, а смена не отмечена. Отмеченные дни не трогаем.
-function markShifts(shifts: ShiftsData, dates: string[]): { shifts: ShiftsData; marked: number } {
-  const days = { ...shifts.days }
-  let marked = 0
-  for (const date of dates) {
-    if (days[date]) continue
-    days[date] = { status: 'shift' }
-    marked++
-  }
-  return { shifts: marked > 0 ? { days } : shifts, marked }
-}
-
-// Последняя отмеченная смена не позже сегодня — дата по умолчанию для «Получил за смену».
-function lastShiftDate(shifts: ShiftsData, today: string): string {
-  let best = ''
-  for (const [date, entry] of Object.entries(shifts.days)) {
-    if (entry.status === 'shift' && date <= today && date > best) best = date
-  }
-  return best || today
-}
-
 export function MoneyTab() {
   // Передаём функции загрузки (без скобок): React вызовет их один раз, при первом показе.
   const [money, setMoney] = useState<MoneyData>(loadMoney)
@@ -163,7 +146,7 @@ export function MoneyTab() {
         ops.map((o) => ({ ...o, id: '' })),
         next,
       )
-      const marked = markShifts(shifts, dates)
+      const marked = markShiftsByIncome(shifts, dates)
       if (marked.marked > 0) {
         setShifts(marked.shifts)
         text += ` Отмечено смен по доходу: ${marked.marked}.`
@@ -175,26 +158,10 @@ export function MoneyTab() {
   }
 
   // ---------- Доход и переводы ----------
-  function addManualIncome(shiftDate: string, rub: number) {
-    setMoney((prev) => ({ ...prev, manualIncome: { ...prev.manualIncome, [shiftDate]: rub } }))
-    setShifts((prev) => markShifts(prev, [shiftDate]).shifts)
-  }
-
-  function removeManualIncome(shiftDate: string) {
-    setMoney((prev) => {
-      const manualIncome = { ...prev.manualIncome }
-      delete manualIncome[shiftDate]
-      return { ...prev, manualIncome }
-    })
-  }
-
-  function toggleTransfer(shiftDate: string, kind: EnvelopeKind) {
-    setMoney((prev) => {
-      const marks = { ...prev.transfers[shiftDate] }
-      if (marks[kind]) delete marks[kind]
-      else marks[kind] = true
-      return { ...prev, transfers: { ...prev.transfers, [shiftDate]: marks } }
-    })
+  // Сама логика — в moneyLogic.ts (её же вызывает «Сегодня»), здесь только сохраняем результат.
+  function handleAddIncome(shiftDate: string, rub: number) {
+    setMoney((prev) => addManualIncome(prev, shiftDate, rub))
+    setShifts((prev) => markShiftsByIncome(prev, [shiftDate]).shifts)
   }
 
   function saveBalances(balances: Partial<Record<BalanceKind, BalanceSnapshot>>) {
@@ -317,10 +284,10 @@ export function MoneyTab() {
           <IncomeCard
             incomes={monthIncomes}
             money={money}
-            defaultDate={lastShiftDate(shifts, today)}
-            onAddManual={addManualIncome}
-            onRemoveManual={removeManualIncome}
-            onToggleTransfer={toggleTransfer}
+            defaultDate={defaultIncomeShiftDate(money, shifts, today)}
+            onAddManual={handleAddIncome}
+            onRemoveManual={(date) => setMoney((prev) => removeManualIncome(prev, date))}
+            onToggleTransfer={(date, kind) => setMoney((prev) => toggleTransfer(prev, date, kind))}
           />
 
           {hasData ? (

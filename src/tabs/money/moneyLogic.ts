@@ -12,6 +12,7 @@ import type {
   MoneyData,
   MoneySettings,
   SalarySplit,
+  ShiftsData,
   Transaction,
 } from '../../types'
 import { merchantKey } from '../../utils/statementText'
@@ -263,6 +264,51 @@ export function monthIncome(money: MoneyData, prefix: string): number {
       .filter((i) => i.shiftDate.startsWith(prefix))
       .reduce((s, i) => s + i.amountKop, 0) / 100
   )
+}
+
+// ---------- «Получил за смену» и отметки «Перевёл» ----------
+// Общие для «Денег» и «Сегодня»: обе вкладки меняют эти данные только через эти функции.
+
+// Записывает доход, введённый вручную (в рублях). Ключ — дата смены, поэтому дублей нет.
+export function addManualIncome(money: MoneyData, shiftDate: string, rub: number): MoneyData {
+  return { ...money, manualIncome: { ...money.manualIncome, [shiftDate]: rub } }
+}
+
+export function removeManualIncome(money: MoneyData, shiftDate: string): MoneyData {
+  const manualIncome = { ...money.manualIncome }
+  delete manualIncome[shiftDate]
+  return { ...money, manualIncome }
+}
+
+// Ставит или снимает галочку «Перевёл» у доли дохода.
+export function toggleTransfer(money: MoneyData, shiftDate: string, kind: EnvelopeKind): MoneyData {
+  const marks = { ...money.transfers[shiftDate] }
+  if (marks[kind]) delete marks[kind]
+  else marks[kind] = true
+  return { ...money, transfers: { ...money.transfers, [shiftDate]: marks } }
+}
+
+// Отмечает «Смена» в дни, где пришёл доход, а смена не отмечена. Отмеченные дни не трогаем.
+export function markShiftsByIncome(shifts: ShiftsData, dates: string[]): { shifts: ShiftsData; marked: number } {
+  const days = { ...shifts.days }
+  let marked = 0
+  for (const date of dates) {
+    if (days[date]) continue
+    days[date] = { status: 'shift' }
+    marked++
+  }
+  return { shifts: marked > 0 ? { days } : shifts, marked }
+}
+
+// Дата смены по умолчанию для «Получил за смену»: последняя отмеченная смена
+// не позже сегодня, за которую ещё нет дохода; такой нет — сегодня.
+export function defaultIncomeShiftDate(money: MoneyData, shifts: ShiftsData, today: string): string {
+  const paid = new Set(shiftIncomes(money).map((i) => i.shiftDate))
+  let best = ''
+  for (const [date, entry] of Object.entries(shifts.days)) {
+    if (entry.status === 'shift' && date <= today && date > best && !paid.has(date)) best = date
+  }
+  return best || today
 }
 
 // ---------- Доли дохода и переводы ----------

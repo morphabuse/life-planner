@@ -4,17 +4,19 @@
 //   привычки и лучшая серия → мини-неделя пн–вс со сменами.
 // На компьютере две колонки (слева день и деньги, справа задачи, привычки и неделя) —
 // на 1280×800 без прокрутки; на телефоне — одна колонка в этом порядке.
-// Своих данных нет: задачи, привычки и отметки «Перевёл» меняем в общих данных,
-// смены только читаем.
+// Своих данных нет: задачи, привычки, доход и отметки «Перевёл» меняем в общих данных
+// через логику других вкладок. Смены только читаем — кроме одного случая: ввёл доход
+// за неотмеченный день — он отмечается «Смена» (как во вкладке «Деньги»).
 import { useEffect, useState } from 'react'
-import type { EnvelopeKind, HabitsData, MoneyData, WeekData } from '../../types'
+import type { EnvelopeKind, HabitsData, MoneyData, ShiftsData, WeekData } from '../../types'
 import { loadWeek, saveWeek } from '../../storage/weekStorage'
-import { loadShifts } from '../../storage/shiftsStorage'
+import { loadShifts, saveShifts } from '../../storage/shiftsStorage'
 import { loadMoney, saveMoney } from '../../storage/moneyStorage'
 import { loadHabits, saveHabits } from '../../storage/habitsStorage'
 import { formatDayLong, todayIso } from '../../utils/date'
 import { addTask, toggleTask } from '../week/weekLogic'
 import { turkeyForecast } from '../money/turkeyLogic'
+import { addManualIncome, defaultIncomeShiftDate, markShiftsByIncome, toggleTransfer } from '../money/moneyLogic'
 import { bestStreak, shiftFocus, todayStatus } from './todayLogic'
 import { TodayStatusCard } from './TodayStatusCard'
 import { TodayMoneyCard } from './TodayMoneyCard'
@@ -27,20 +29,24 @@ import styles from './TodayTab.module.css'
 export function TodayTab() {
   const [today] = useState(todayIso)
   const [week, setWeek] = useState<WeekData>(loadWeek)
-  const [shifts] = useState(loadShifts)
+  const [shifts, setShifts] = useState<ShiftsData>(loadShifts)
   const [money, setMoney] = useState<MoneyData>(loadMoney)
   const [habits, setHabits] = useState<HabitsData>(loadHabits)
 
   useEffect(() => saveWeek(week), [week])
   useEffect(() => saveHabits(habits), [habits])
   useEffect(() => saveMoney(money), [money])
+  useEffect(() => saveShifts(shifts), [shifts])
 
-  // Галочка в напоминании = отметка «Перевёл» (та же, что во вкладке «Деньги»).
-  function markTransferred(shiftDate: string, kind: EnvelopeKind) {
-    setMoney((prev) => ({
-      ...prev,
-      transfers: { ...prev.transfers, [shiftDate]: { ...prev.transfers[shiftDate], [kind]: true } },
-    }))
+  // «Получил за смену» — та же логика, что во вкладке «Деньги» (moneyLogic.ts).
+  function addIncome(shiftDate: string, rub: number) {
+    setMoney((prev) => addManualIncome(prev, shiftDate, rub))
+    setShifts((prev) => markShiftsByIncome(prev, [shiftDate]).shifts)
+  }
+
+  // Галочка «Перевёл» — та же отметка, что во вкладке «Деньги».
+  function handleToggleTransfer(shiftDate: string, kind: EnvelopeKind) {
+    setMoney((prev) => toggleTransfer(prev, shiftDate, kind))
   }
 
   const title = formatDayLong(today)
@@ -56,7 +62,9 @@ export function TodayTab() {
             money={money}
             forecast={turkeyForecast(money, shifts, today)}
             today={today}
-            onTransferred={markTransferred}
+            incomeDate={defaultIncomeShiftDate(money, shifts, today)}
+            onAddIncome={addIncome}
+            onToggleTransfer={handleToggleTransfer}
           />
         </div>
 
