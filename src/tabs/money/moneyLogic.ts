@@ -208,7 +208,7 @@ export interface ShiftIncome {
   amountKop: number // итог: по выписке, если она есть, иначе введённое
   statementKop: number | null
   manualKop: number | null
-  paidDate: string // когда пришли деньги: последний платёж по выписке; введённый вручную — дата смены
+  paidDate: string // когда пришли деньги: последний платёж по выписке; введённый вручную — день после смены
   status: IncomeStatus
 }
 
@@ -240,8 +240,8 @@ export function shiftIncomes(money: MoneyData): ShiftIncome[] {
       amountKop: statementKop ?? manualKop ?? 0,
       statementKop,
       manualKop,
-      // Введённый вручную доход учитываем сразу (днём смены), чтобы «Перевёл» сразу шло в прогресс.
-      paidDate: st ? st.paid : shiftDate,
+      // Введённый вручную доход: основная выплата приходит около 12:00 следующего дня.
+      paidDate: st ? st.paid : addDays(shiftDate, 1),
       status,
     }
   })
@@ -286,20 +286,84 @@ export interface PendingTransfer {
   kop: number
 }
 
-// Доли дохода, которые ещё не отмечены «Перевёл» (для напоминаний).
-export function pendingTransfers(money: MoneyData): PendingTransfer[] {
-  const result: PendingTransfer[] = []
+const OWN_TRANSFER = /Перевод собственных средств/iu
+// Перевод доли ищем в выписке счёта в день смены и ещё 3 дня после (деньги приходят на следующий день).
+const CONFIRM_DAYS = 3
+// Сумма перевода может отличаться от доли на рубль (округление).
+const CONFIRM_TOLERANCE_KOP = 100
+
+// Ключ доли: 'дата смены|счёт'.
+export function shareKey(shiftDate: string, kind: EnvelopeKind): string {
+  return `${shiftDate}|${kind}`
+}
+
+// Какие доли подтверждены выпиской: на счёт-конверт пришёл «Перевод собственных средств»
+// на сумму доли (±1 ₽) в дату смены … +3 дня. Один перевод подтверждает только одну долю —
+// идём по сменам по порядку и забираем самый ранний подходящий перевод.
+// Результат: ключ доли (shareKey) → дата перевода.
+export function confirmedShares(money: MoneyData): Map<string, string> {
+  const result = new Map<string, string>()
+  const used = new Set<string>()
+  const transfers = money.transactions
+    .filter((t) => t.amount > 0 && OWN_TRANSFER.test(t.purpose))
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
   for (const income of envelopeIncomes(money)) {
     const shares = splitIncome(income.amountKop, money.settings.split)
-    const marks = money.transfers[income.shiftDate] ?? {}
+    const last = addDays(income.shiftDate, CONFIRM_DAYS)
     for (const kind of ENVELOPES) {
-      if (shares[kind] > 0 && !marks[kind]) result.push({ shiftDate: income.shiftDate, kind, kop: shares[kind] })
+      if (shares[kind] <= 0) continue
+      const tx = transfers.find(
+        (t) =>
+          !used.has(t.id) &&
+          kindOf(t, money) === kind &&
+          t.date >= income.shiftDate &&
+          t.date <= last &&
+          Math.abs(t.amount - shares[kind]) <= CONFIRM_TOLERANCE_KOP,
+      )
+      if (tx) {
+        used.add(tx.id)
+        result.set(shareKey(income.shiftDate, kind), tx.date)
+      }
     }
   }
   return result
 }
 
-const OWN_TRANSFER = /Перевод собственных средств/iu
+// Доли, которые ещё не переведены: не отмечены «Перевёл» и не подтверждены выпиской
+// (для напоминаний).
+export function pendingTransfers(money: MoneyData): PendingTransfer[] {
+  const confirmed = confirmedShares(money)
+  const result: PendingTransfer[] = []
+  for (const income of envelopeIncomes(money)) {
+    const shares = splitIncome(income.amountKop, money.settings.split)
+    const marks = money.transfers[income.shiftDate] ?? {}
+    for (const kind of ENVELOPES) {
+      if (shares[kind] > 0 && !marks[kind] && !confirmed.has(shareKey(income.shiftDate, kind))) {
+        result.push({ shiftDate: income.shiftDate, kind, kop: shares[kind] })
+      }
+    }
+  }
+  return result
+}
+
+// Доли, отмеченные «Перевёл», но ещё не видные в выписке счёта: деньги уже на счёте,
+// а в остатке по выписке их нет — прибавляем к остатку сами. Как только выписка покажет
+// перевод (confirmedShares), доля сюда больше не попадает и учитывается уже в остатке —
+// без двойного счёта. Если остаток счёта введён вручную позже, чем пришёл доход, — доля уже в нём.
+// Доля относится к дню смены (shiftDate).
+export function unconfirmedShares(money: MoneyData, kind: EnvelopeKind): PendingTransfer[] {
+  const confirmed = confirmedShares(money)
+  const manual = money.manualBalances[kind]
+  const result: PendingTransfer[] = []
+  for (const income of envelopeIncomes(money)) {
+    if (!money.transfers[income.shiftDate]?.[kind]) continue
+    if (confirmed.has(shareKey(income.shiftDate, kind))) continue
+    if (manual && manual.date >= income.paidDate) continue
+    const kop = splitIncome(income.amountKop, money.settings.split)[kind]
+    if (kop > 0) result.push({ shiftDate: income.shiftDate, kind, kop })
+  }
+  return result
+}
 
 export interface TransferCheck {
   // none        — выписки этого счёта нет
@@ -378,11 +442,27 @@ export interface KindBalance {
   kop: number
   asOf: string // по какую дату известно
   manual: boolean // введено вручную (а не из выписки)
+  pendingKop: number // из них — отмеченные «Перевёл» доли, которых выписка ещё не видит
+  onlyPending: boolean // выписки и введённого остатка нет — известны только отмеченные доли
 }
 
-// Остаток на счетах этого вида на конец дня date. Введённый вручную остаток главнее
-// выписки, если он новее; операции после него (из следующих выписок) прибавляются.
+// Остаток на счетах этого вида на конец дня date: по выпискам (или введённый вручную)
+// + для счетов-конвертов отмеченные «Перевёл» доли, которых выписка ещё не видит.
 export function balanceOf(money: MoneyData, kind: BalanceKind, date: string): KindBalance | null {
+  const base = statementBalanceOf(money, kind, date)
+  const pendingKop =
+    kind === 'card'
+      ? 0
+      : unconfirmedShares(money, kind)
+          .filter((s) => s.shiftDate <= date)
+          .reduce((sum, s) => sum + s.kop, 0)
+  if (!base) return pendingKop > 0 ? { kop: pendingKop, asOf: date, manual: false, pendingKop, onlyPending: true } : null
+  return { ...base, kop: base.kop + pendingKop, pendingKop, onlyPending: false }
+}
+
+// Остаток только по данным счёта: выпискам или введённому вручную. Введённый вручную
+// главнее выписки, если он новее; операции после него (из следующих выписок) прибавляются.
+function statementBalanceOf(money: MoneyData, kind: BalanceKind, date: string): Omit<KindBalance, 'pendingKop' | 'onlyPending'> | null {
   const numbers = Object.entries(money.accounts)
     .filter(([, info]) => info.kind === kind)
     .map(([number]) => number)

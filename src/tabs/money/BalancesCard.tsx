@@ -50,7 +50,10 @@ export function BalancesCard({ money, today, onSaveBalances }: Props) {
   const source = (kind: BalanceKind) => {
     const b = balances[kind]
     if (!b) return 'нет данных'
-    return b.manual ? `введено ${formatDate(b.asOf)}` : `по выписке на ${formatDate(b.asOf)}`
+    if (b.onlyPending) return 'выписки нет — отмечено «Перевёл»'
+    const base = b.manual ? `введено ${formatDate(b.asOf)}` : `по выписке на ${formatDate(b.asOf)}`
+    // Отмеченные «Перевёл» доли, которых выписка ещё не видит, уже прибавлены к остатку.
+    return b.pendingKop > 0 ? `${base} + ${formatMoneyExact(b.pendingKop / 100)} «Перевёл»` : base
   }
 
   return (

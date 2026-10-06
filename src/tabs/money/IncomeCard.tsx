@@ -10,7 +10,7 @@ import { Badge, Button, Card, Input } from '../../components/ui'
 import type { EnvelopeKind, MoneyData } from '../../types'
 import { formatDayShort } from '../../utils/date'
 import type { ShiftIncome } from './moneyLogic'
-import { ENVELOPE_TO, ENVELOPES, splitIncome } from './moneyLogic'
+import { ENVELOPE_TO, ENVELOPES, confirmedShares, shareKey, splitIncome } from './moneyLogic'
 import { formatDate, formatMoney, formatMoneyExact, plural } from './format'
 import styles from './MoneyTab.module.css'
 
@@ -62,6 +62,8 @@ export function IncomeCard({ incomes, money, defaultDate, onAddManual, onRemoveM
     setError('')
   }
 
+  // Какие доли выписка счёта уже подтвердила (перевод на сумму доли нашёлся).
+  const confirmed = confirmedShares(money)
   // Новые смены сверху.
   const sorted = [...incomes].sort((a, b) => b.shiftDate.localeCompare(a.shiftDate))
 
@@ -105,18 +107,30 @@ export function IncomeCard({ incomes, money, defaultDate, onAddManual, onRemoveM
                 {income.shiftDate >= start ? (
                   <div className={styles.shares}>
                     <span className={styles.caption}>Переведи:</span>
-                    {ENVELOPES.map((kind) => (
-                      <label key={kind} className={styles.share}>
-                        <input
-                          type="checkbox"
-                          checked={marks[kind] === true}
-                          onChange={() => onToggleTransfer(income.shiftDate, kind)}
-                        />
-                        <span className={marks[kind] ? styles.shareDone : undefined}>
-                          {formatMoneyExact(shares[kind] / 100)} на {ENVELOPE_TO[kind]}
-                        </span>
-                      </label>
-                    ))}
+                    {ENVELOPES.map((kind) => {
+                      const confirmedOn = confirmed.get(shareKey(income.shiftDate, kind))
+                      const label = `${formatMoneyExact(shares[kind] / 100)} на ${ENVELOPE_TO[kind]}`
+                      // Перевод нашёлся в выписке счёта — галочка больше не нужна.
+                      if (confirmedOn) {
+                        return (
+                          <span key={kind} className={styles.share}>
+                            <Badge tone="accent" icon={<Check size={12} />}>
+                              {label} · подтверждено выпиской {formatDayShort(confirmedOn)}
+                            </Badge>
+                          </span>
+                        )
+                      }
+                      return (
+                        <label key={kind} className={styles.share}>
+                          <input
+                            type="checkbox"
+                            checked={marks[kind] === true}
+                            onChange={() => onToggleTransfer(income.shiftDate, kind)}
+                          />
+                          <span className={marks[kind] ? styles.shareDone : undefined}>{label}</span>
+                        </label>
+                      )
+                    })}
                   </div>
                 ) : (
                   <p className={styles.captionXs}>До {formatDate(start)} — только в аналитику, не в конверты.</p>

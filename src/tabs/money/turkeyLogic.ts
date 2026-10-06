@@ -1,10 +1,11 @@
 // Турция: прогресс и прогноз «Успеваю ли». Без React — только чистые функции.
 //
-// Прогресс = насколько вырос остаток счёта «Турция» с даты старта (проценты банка — тоже в плюс)
-// + доли «Турция», отмеченные «Перевёл», которые выписка (или введённый остаток) ещё не видит.
+// Прогресс = насколько вырос остаток счёта «Турция» с даты старта (проценты банка — тоже в плюс).
+// Остаток уже включает доли «Турция», отмеченные «Перевёл», которых выписка ещё не видит
+// (balanceOf + unconfirmedShares в moneyLogic.ts).
 import type { MoneyData, ShiftsData } from '../../types'
 import { addDays, daysBetween } from '../../utils/date'
-import { balanceOf, coverage, envelopeIncomes, splitIncome, turkeyPerShift } from './moneyLogic'
+import { balanceOf, coverage, envelopeIncomes, turkeyPerShift } from './moneyLogic'
 import { formatMoney, plural } from './format'
 
 // Если с даты старта прошло меньше — темп берём по плану, а не по факту.
@@ -19,18 +20,7 @@ const TIGHT_SHARE = 0.05
 export function turkeyAdded(money: MoneyData, from: string, to: string): number {
   const before = balanceOf(money, 'turkey', addDays(from, -1))?.kop ?? 0
   const after = balanceOf(money, 'turkey', to)?.kop ?? 0
-  // Отмеченные «Перевёл» доли, которых ещё нет в данных счёта (деньги пришли позже, чем
-  // кончается выписка или чем введён остаток).
-  const known = coverage(money, 'turkey') ?? ''
-  let pending = 0
-  for (const income of envelopeIncomes(money)) {
-    const date = income.paidDate
-    if (date < from || date > to || date <= known) continue
-    if (money.transfers[income.shiftDate]?.turkey) {
-      pending += splitIncome(income.amountKop, money.settings.split).turkey
-    }
-  }
-  return after - before + pending
+  return after - before
 }
 
 export interface TurkeyProgress {
