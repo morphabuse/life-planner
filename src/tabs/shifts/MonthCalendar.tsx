@@ -1,18 +1,11 @@
-// Календарь одного месяца: дни раскрашены по статусу, по клику день выбирается.
-import type { DayStatus, ShiftsData } from '../../types'
+// Календарь одного месяца: дни-квадраты по отметкам из «Смен», по клику день выбирается.
+import type { ShiftsData } from '../../types'
 import { daysInMonth, formatDayShort, makeIso, weekdayMondayFirst } from '../../utils/date'
-import { STATUS_LABELS } from './schedule'
+import { MARK_LABELS, dayMark } from './schedule'
+import { DaySquare } from './DaySquare'
 import styles from './ShiftsTab.module.css'
 
 const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
-
-// Класс ячейки для каждого статуса (цвета — из токенов --status-*).
-const STATUS_CLASS: Record<DayStatus, string> = {
-  shift: styles.dayShift,
-  missed: styles.dayMissed,
-  leave: styles.dayLeave,
-  off: styles.dayOff,
-}
 
 interface Props {
   year: number
@@ -44,34 +37,21 @@ export function MonthCalendar({ year, monthIndex, data, today, selected, onSelec
       ))}
 
       {dates.map((date, i) => {
-        const entry = data.days[date]
-        const classes = [
-          styles.day,
-          entry && STATUS_CLASS[entry.status],
-          date === today && styles.today,
-          date === selected && styles.selected,
-        ]
-          .filter(Boolean)
-          .join(' ')
-
-        // Подпись для программ чтения с экрана: «5 октября: Смена»
-        let label = `${formatDayShort(date)}: `
-        label += entry ? STATUS_LABELS[entry.status] : 'не отмечен'
-
+        const mark = dayMark(date, data, today)
+        // Подпись для программ чтения с экрана: «5 октября: Отработал»
+        const label = `${formatDayShort(date)}: ${mark ? MARK_LABELS[mark] : 'не отмечен'}`
         return (
-          <button
+          <DaySquare
             key={date}
-            type="button"
-            className={classes}
+            mark={mark}
+            isToday={date === today}
+            selected={date === selected}
+            label={label}
             onClick={() => onSelect(date)}
-            aria-label={label}
-            aria-pressed={date === selected}
           >
             <span className={styles.dayNumber}>{i + 1}</span>
-            {entry && (
-              <span className={styles.dayTag}>{STATUS_LABELS[entry.status].toLowerCase()}</span>
-            )}
-          </button>
+            {mark && <span className={styles.dayTag}>{MARK_LABELS[mark]}</span>}
+          </DaySquare>
         )
       })}
     </div>

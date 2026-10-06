@@ -17,6 +17,7 @@
   background: var(--color-accent);
 }
 
+/* Превышение — коралловым (рядом всегда есть подпись «превышен на …» со значком). */
 .danger {
   background: var(--status-danger-fg);
 }

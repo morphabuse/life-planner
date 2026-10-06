@@ -11,6 +11,30 @@ export const STATUS_LABELS: Record<DayStatus, string> = {
   off: 'Выходной',
 }
 
+// Стандартная смена — всегда ночная, время не храним. Только для подписей.
+export const SHIFT_HOURS = '22:00–10:00'
+
+// Как показать день в квадратике (календарь, мини-неделя, серия смен).
+// Смена делится на прошедшую (отработал) и сегодняшнюю/будущую (запланирована):
+// сегодняшняя смена ещё не отработана — как и в серии «Смены без пропусков».
+export type DayMark = 'worked' | 'planned' | 'missed' | 'leave' | 'off'
+
+export const MARK_LABELS: Record<DayMark, string> = {
+  worked: 'Отработал',
+  planned: 'Смена',
+  missed: 'Не вышел',
+  leave: 'Отгул',
+  off: 'Выходной',
+}
+
+// null — день не отмечен (смены нет).
+export function dayMark(date: string, data: ShiftsData, today: string): DayMark | null {
+  const status = data.days[date]?.status
+  if (!status) return null
+  if (status === 'shift') return date < today ? 'worked' : 'planned'
+  return status
+}
+
 // Максимум дней, которые помощник 2/2 заполняет за раз (защита от опечатки в годе).
 export const FILL_MAX_DAYS = 366
 

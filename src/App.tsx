@@ -6,7 +6,7 @@ import { WeekTab } from './tabs/week/WeekTab'
 import { ShiftsTab } from './tabs/shifts/ShiftsTab'
 import { HabitsTab } from './tabs/habits/HabitsTab'
 import { BackupControls } from './components/BackupControls'
-import { ThemeToggle } from './components/ThemeToggle'
+import { Backdrop } from './components/Backdrop'
 import { UpdatePrompt } from './components/UpdatePrompt'
 import { SyncStatus } from './components/sync/SyncStatus'
 import { AccountCard } from './components/sync/AccountCard'
@@ -66,6 +66,8 @@ function App() {
 
   return (
     <>
+      <Backdrop />
+
       <header className={styles.header}>
         <div className={styles.headerInner}>
           {/* Название и под ним — статус синхронизации (мелко, помещается и на телефоне). */}
@@ -93,7 +95,6 @@ function App() {
 
           <div className={styles.headerActions}>
             <BackupControls onRestored={() => setDataVersion((v) => v + 1)} />
-            <ThemeToggle />
           </div>
         </div>
       </header>

@@ -27,6 +27,14 @@
   font-size: inherit;
 }
 
+/* Строка о перерасходе: значок «!» + текст коралловым. */
+.dangerLine {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--status-danger-fg);
+}
+
 .positive {
   color: var(--status-success-fg);
 }
@@ -57,23 +65,42 @@
 
 /* ---------- Итоги копилки ---------- */
 
+/* Итоги — плитки внутри карточки. */
 .stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: var(--space-6);
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--space-3);
   margin-bottom: var(--space-6);
 }
 
+.stats > div,
+.accountGrid > div {
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-md);
+}
+
+/* Подпись к числу — мелко и КАПСОМ. */
 .statLabel {
   margin-bottom: var(--space-1);
   color: var(--color-text-muted);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
+  letter-spacing: var(--caps-tracking);
+  text-transform: uppercase;
 }
 
 .statValue {
+  font-family: var(--font-display);
   font-size: var(--text-xl);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-tight);
+}
+
+/* На телефоне плитки по две в ряд — числа чуть мельче, чтобы влезали. */
+@media (max-width: 640px) {
+  .statValue {
+    font-size: var(--text-lg);
+  }
 }
 
 .progressCaption {
@@ -141,8 +168,9 @@
 }
 
 .envelopeValue {
+  font-family: var(--font-display);
   font-size: var(--text-md);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-semibold);
 }
 
 .envelopeNote {
@@ -296,6 +324,7 @@
   border: var(--border-width) dashed var(--color-border-strong);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
+  box-shadow: var(--glow-card);
   text-align: center;
   transition:
     background-color var(--transition-fast),
@@ -312,6 +341,7 @@
 }
 
 .dropTitle {
+  font-family: var(--font-display);
   font-size: var(--text-md);
   font-weight: var(--weight-semibold);
 }
@@ -367,8 +397,8 @@
 }
 
 .stepDone {
-  background: var(--status-off-bg);
-  color: var(--status-success-fg);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 .stepBody {
@@ -410,13 +440,26 @@
 
 /* ---------- Прогноз «Успеваю ли» ---------- */
 
+/* Контурный чип: рамка и точка цвета прогноза, текст светлый. */
 .forecast {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  margin: var(--space-4) 0 var(--space-2);
-  font-size: var(--text-md);
-  font-weight: var(--weight-semibold);
+  max-width: 100%;
+  margin: var(--space-3) 0 var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border: var(--border-width) solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.forecastDot {
+  flex-shrink: 0;
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--color-text-muted);
 }
 
 .forecastIcon {
@@ -424,20 +467,26 @@
 }
 
 .forecast_ok {
-  color: var(--status-success-fg);
+  border-color: var(--status-shift-border);
 }
 
-.forecast_tight {
-  color: var(--status-leave-fg);
+.forecast_ok .forecastDot {
+  background: var(--color-accent);
 }
 
 .forecast_short {
+  border-color: var(--status-danger-border);
   color: var(--status-danger-fg);
+}
+
+.forecast_short .forecastDot {
+  background: var(--status-danger-fg);
 }
 
 /* ---------- Можно потратить и остатки ---------- */
 
 .spendable {
+  font-family: var(--font-display);
   font-size: var(--text-xl);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-tight);
@@ -445,8 +494,8 @@
 
 .accountGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--space-3);
   margin-top: var(--space-4);
 }
 
@@ -558,7 +607,7 @@
 
 .sectionTitle {
   margin-bottom: var(--space-3);
-  font-size: var(--text-base);
+  font-size: var(--text-md);
   font-weight: var(--weight-semibold);
 }
 

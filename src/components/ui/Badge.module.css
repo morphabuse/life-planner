@@ -1,18 +1,22 @@
+/* Плашка-чип: контурная «таблетка», текст мелко и КАПСОМ. */
 .badge {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  height: 24px;
+  min-height: 22px;
   padding: 0 var(--space-2);
   border: var(--border-width) solid transparent;
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
   font-weight: var(--weight-medium);
-  white-space: nowrap;
+  letter-spacing: var(--caps-tracking);
+  line-height: var(--leading-tight);
+  text-transform: uppercase;
 }
 
 .icon {
   display: inline-flex;
+  flex-shrink: 0;
 }
 
 .dot {
@@ -34,7 +38,8 @@
 
 .accent {
   background: var(--color-accent-soft);
-  color: var(--color-accent);
+  border-color: var(--status-shift-border);
+  color: var(--status-shift-fg);
 }
 
 .shift {

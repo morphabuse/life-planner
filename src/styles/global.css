@@ -1,4 +1,4 @@
-/* Глобальные стили: сброс, шрифт, фокус. Только токены из tokens.css. */
+/* Глобальные стили: сброс, шрифты, фокус. Только токены из tokens.css. */
 
 *,
 *::before,
@@ -6,20 +6,27 @@
   box-sizing: border-box;
 }
 
+/* Фон страницы — на <html>; «туманность» лежит поверх него (Backdrop),
+   а весь сайт (#root) — ещё выше и прокручивается над неподвижным фоном. */
 html {
   background: var(--color-bg);
 }
 
 body {
   margin: 0;
-  background: var(--color-bg);
   color: var(--color-text);
-  font-family: var(--font-sans);
+  font-family: var(--font-mono);
   font-size: var(--text-base);
   line-height: var(--leading-normal);
   /* Цифры одинаковой ширины: суммы и даты в столбик не «пляшут». */
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Своя «стопка слоёв» для сайта: фон с z-index: -1 ляжет под весь контент,
+   но над фоном страницы. */
+#root {
+  isolation: isolate;
 }
 
 h1,
@@ -29,9 +36,11 @@ p {
   margin: 0;
 }
 
+/* Заголовки — пиксельный шрифт. */
 h1,
 h2,
 h3 {
+  font-family: var(--font-display);
   line-height: var(--leading-tight);
   font-weight: var(--weight-semibold);
 }
@@ -58,9 +67,9 @@ input[type='checkbox'] {
   margin: 0;
 }
 
-/* Значки календаря/часов в нативных полях — нормального цвета в тёмной теме. */
+/* Значки календаря/часов в нативных полях — светлые на тёмном фоне. */
 input[type='date'],
 input[type='time'],
 input[type='month'] {
-  color-scheme: inherit;
+  color-scheme: dark;
 }

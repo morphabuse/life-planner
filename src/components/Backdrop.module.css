@@ -1,0 +1,61 @@
+/* Неподвижный фон на весь экран. pointer-events: none — клики проходят насквозь. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Пятно туманности: круг цвета токена, сильно размытый и полупрозрачный. */
+.blob {
+  position: absolute;
+  border-radius: var(--radius-full);
+  opacity: var(--nebula-opacity);
+  filter: blur(var(--nebula-blur));
+}
+
+.teal {
+  top: -10vmax;
+  left: -10vmax;
+  width: 45vmax;
+  height: 45vmax;
+  background: var(--nebula-teal);
+}
+
+.violet {
+  top: 30vh;
+  right: -14vmax;
+  width: 40vmax;
+  height: 40vmax;
+  background: var(--nebula-violet);
+}
+
+.blue {
+  bottom: -16vmax;
+  left: 20vw;
+  width: 46vmax;
+  height: 40vmax;
+  background: var(--nebula-blue);
+}
+
+/* Звёзды: несколько точек по 1–2 px в разных местах экрана.
+   Каждая точка — маленький круг (radial-gradient) в своей позиции. */
+.stars {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-image:
+    radial-gradient(1px 1px at 8% 14%, var(--color-star), transparent),
+    radial-gradient(1px 1px at 23% 62%, var(--color-star-dim), transparent),
+    radial-gradient(1.5px 1.5px at 37% 28%, var(--color-star), transparent),
+    radial-gradient(1px 1px at 46% 83%, var(--color-star-dim), transparent),
+    radial-gradient(1px 1px at 58% 9%, var(--color-star-dim), transparent),
+    radial-gradient(1.5px 1.5px at 67% 47%, var(--color-star), transparent),
+    radial-gradient(1px 1px at 78% 72%, var(--color-star), transparent),
+    radial-gradient(1px 1px at 86% 21%, var(--color-star-dim), transparent),
+    radial-gradient(1.5px 1.5px at 93% 91%, var(--color-star-dim), transparent),
+    radial-gradient(1px 1px at 14% 92%, var(--color-star), transparent),
+    radial-gradient(1px 1px at 31% 4%, var(--color-star-dim), transparent),
+    radial-gradient(1px 1px at 72% 33%, var(--color-star-dim), transparent);
+}

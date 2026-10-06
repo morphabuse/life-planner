@@ -58,8 +58,24 @@ button.cell:hover {
 }
 
 .cellToday {
-  outline: var(--border-width) solid var(--color-text-subtle);
+  outline: var(--border-width) solid var(--color-today);
   outline-offset: 1px;
+}
+
+/* ---------- Полоска серии смен (14 квадратиков) ---------- */
+
+/* Всегда в один ряд: квадратики не крупнее --day-square-sm, на узком экране сжимаются. */
+.strip {
+  display: grid;
+  grid-template-columns: repeat(14, minmax(0, var(--day-square-sm)));
+  gap: var(--space-1);
+  margin: 0;
+  padding: 2px; /* место для белой обводки «сегодня» */
+  list-style: none;
+}
+
+.strip li {
+  display: flex;
 }
 
 /* ---------- Формы ---------- */
@@ -125,11 +141,19 @@ button.cell:hover {
 .todayStreak {
   flex-shrink: 0;
   color: var(--color-text-muted);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
+  letter-spacing: var(--caps-tracking);
+  text-transform: uppercase;
 }
 
 .todayAuto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
   margin-top: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-md);
   color: var(--color-text-muted);
   font-size: var(--text-sm);
 }

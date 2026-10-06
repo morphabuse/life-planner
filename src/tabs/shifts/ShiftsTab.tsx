@@ -1,4 +1,4 @@
-// Вкладка «Смены»: ближайшая смена с подсказкой по сну, календарь месяца
+// Вкладка «Смены»: ближайшая смена, календарь месяца
 // с ручной отметкой дней, итоги месяца и помощник «Заполнить 2/2».
 import { useEffect, useState } from 'react'
 import type { DayEntry, ShiftsData } from '../../types'
@@ -7,14 +7,15 @@ import { loadMoney } from '../../storage/moneyStorage'
 // Денежную логику не дублируем — берём из вкладки «Деньги».
 import { averagePerShift, missedCost, monthIncome, monthPrefix } from '../money/moneyLogic'
 import { formatMoney } from '../money/format'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { Button, Card, StatusDot } from '../../components/ui'
+import { ChevronLeft, ChevronRight, CircleAlert } from 'lucide-react'
+import { Button, Card } from '../../components/ui'
 import { todayIso } from '../../utils/date'
 import { fillTwoTwo, findNextShift, monthStats, setDay } from './schedule'
 import { NextShiftCard } from './NextShiftCard'
 import { MonthCalendar } from './MonthCalendar'
 import { DayEditor } from './DayEditor'
 import { FillTwoTwoCard } from './FillTwoTwoCard'
+import { DayLegend } from './DayLegend'
 import styles from './ShiftsTab.module.css'
 
 // 'октябрь' + 2026 → 'Октябрь 2026'
@@ -115,12 +116,7 @@ export function ShiftsTab() {
           onSelect={setSelected}
         />
 
-        <div className={styles.legend}>
-          <span><StatusDot tone="shift" /> смена</span>
-          <span><StatusDot tone="missed" /> не вышел</span>
-          <span><StatusDot tone="leave" /> отгул</span>
-          <span><StatusDot tone="off" /> выходной</span>
-        </div>
+        <DayLegend />
 
         <div className={styles.stats} aria-label="Итог месяца">
           <div>
@@ -134,6 +130,7 @@ export function ShiftsTab() {
           <div>
             <div className={`${styles.statValue} ${stats.missed > 0 ? styles.statBad : ''}`}>
               {stats.missed}
+              {stats.missed > 0 && <CircleAlert size={18} aria-hidden="true" />}
             </div>
             <div className={styles.caption}>не вышел</div>
           </div>
@@ -147,6 +144,7 @@ export function ShiftsTab() {
           <div className={styles.moneyNotes}>
             {stats.missed > 0 && (
               <p className={styles.statBadText}>
+                <CircleAlert size={14} aria-hidden="true" className={styles.inlineIcon} />
                 Пропусков: {stats.missed} — это −{formatMoney(lost.total)}, из них −
                 {formatMoney(lost.turkey)} на Турцию
               </p>

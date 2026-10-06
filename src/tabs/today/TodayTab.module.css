@@ -31,33 +31,23 @@
   min-width: 0;
 }
 
-/* ---------- Смена ---------- */
-
-.sleepTitle {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-1);
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-}
-
-.sleepList {
-  margin: 0;
-  padding-left: var(--space-5);
-  font-size: var(--text-sm);
-  line-height: var(--leading-normal);
-}
-
 /* ---------- Деньги ---------- */
 
+/* «Можно потратить» — плитка внутри карточки. */
 .spendLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-md);
   font-size: var(--text-sm);
 }
 
 .spendValue {
-  font-size: var(--text-md);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
 }
 
@@ -94,84 +84,33 @@
 
 .week {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: var(--space-1);
+  grid-template-columns: repeat(7, minmax(0, var(--space-10))); /* квадраты не крупнее 40 px */
+  justify-content: space-between;
+  gap: var(--space-2);
   margin: 0;
-  padding: 0;
+  padding: 2px; /* место для белой обводки «сегодня» */
   list-style: none;
 }
 
 .weekDay {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: var(--space-1);
-  padding: var(--space-2) var(--space-1);
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-sm);
-  font-variant-numeric: tabular-nums;
+  min-width: 0;
 }
 
 .weekName {
-  color: var(--color-text-muted);
+  color: var(--color-text-subtle);
   font-size: var(--text-xs);
+  letter-spacing: var(--caps-tracking);
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .weekNumber {
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
-}
-
-.weekTag {
-  min-height: 1lh;
-  overflow: hidden;
-  max-width: 100%;
-  font-size: var(--text-xs);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.weekToday {
-  border-color: var(--color-accent);
-  outline: var(--border-width) solid var(--color-accent); /* двойная рамка — сегодня */
-}
-
-.dayShift {
-  background: var(--status-shift-bg);
-  border-color: var(--status-shift-border);
-  color: var(--status-shift-fg);
-}
-
-.dayMissed {
-  background: var(--status-missed-bg);
-  border-color: var(--status-missed-border);
-  color: var(--status-missed-fg);
-}
-
-.dayLeave {
-  background: var(--status-leave-bg);
-  border-color: var(--status-leave-border);
-  color: var(--status-leave-fg);
-}
-
-.dayOff {
-  background: var(--status-off-bg);
-  border-color: var(--status-off-border);
-  color: var(--status-off-fg);
-}
-
-.dayShift .weekName,
-.dayMissed .weekName,
-.dayLeave .weekName,
-.dayOff .weekName {
-  color: inherit;
-}
-
-/* На узком экране подпись статуса не помещается — остаётся цвет. */
-@media (max-width: 640px) {
-  .weekTag {
-    display: none;
-  }
 }
 
 /* ---------- Задачи ---------- */

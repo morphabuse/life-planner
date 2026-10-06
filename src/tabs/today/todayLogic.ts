@@ -5,7 +5,7 @@ import { addDays } from '../../utils/date'
 import { findNextShift, getEntry } from '../shifts/schedule'
 import { AUTO_SHIFTS_NAME, dayStreak, shiftStreak } from '../habits/habitsLogic'
 
-// Что показать про смену (для плана сна).
+// Что дальше со сменами — для подзаголовка статуса дня.
 export type ShiftFocus =
   | { kind: 'shift'; date: string; when: 'today' | 'tomorrow' } // смена сегодня или завтра
   | { kind: 'later'; date: string } // сегодня и завтра смен нет, ближайшая позже

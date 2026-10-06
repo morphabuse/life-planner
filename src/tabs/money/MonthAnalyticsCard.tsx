@@ -2,6 +2,7 @@
 //   «Жизнь»: доля дохода (50 %) против трат с карты (кроме «Одежды и ухода»);
 //   «Одежда и уход»: доля (10 %) против трат этой категории.
 // Доходы до даты старта сюда входят — в конверты они не идут, а в аналитику да.
+import { CircleAlert } from 'lucide-react'
 import { Card, ProgressBar } from '../../components/ui'
 import type { SalarySplit } from '../../types'
 import type { MonthAnalytics } from './moneyLogic'
@@ -30,9 +31,13 @@ function Row({ name, percent, planned, spent, hasIncome }: {
           {percent} % дохода {hasIncome ? `= ${formatMoney(planned)}` : ''}
         </span>
       </div>
-      <div className={over ? styles.danger : undefined}>
-        Потрачено {formatMoney(spent)}
-        {hasIncome && (over ? ` — больше на ${formatMoney(spent - planned)}` : ` — осталось ${formatMoney(planned - spent)}`)}
+      <div className={over ? styles.dangerLine : undefined}>
+        {/* Перерасход — не только цветом: значок «!» и подпись «больше на …». */}
+        {over && <CircleAlert size={14} aria-hidden="true" />}
+        <span>
+          Потрачено {formatMoney(spent)}
+          {hasIncome && (over ? ` — больше на ${formatMoney(spent - planned)}` : ` — осталось ${formatMoney(planned - spent)}`)}
+        </span>
       </div>
       {hasIncome && (
         <ProgressBar

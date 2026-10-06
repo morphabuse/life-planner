@@ -122,3 +122,13 @@ export function gridDays(today: string): GridCell[] {
 export function countInRange(dates: string[], from: string, to: string): number {
   return dates.filter((d) => d >= from && d <= to).length
 }
+
+// ---------- Полоска серии смен ----------
+
+// Сколько последних дней показывать в полоске «Смены без пропусков» (2 недели).
+export const SHIFT_STRIP_DAYS = 14
+
+// Последние n дней, заканчивая сегодняшним: [сегодня − (n−1), …, сегодня].
+export function lastDays(today: string, n: number): string[] {
+  return Array.from({ length: n }, (_, i) => addDays(today, i - (n - 1)))
+}

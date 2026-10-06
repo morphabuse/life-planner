@@ -1,6 +1,9 @@
-// Плашка-метка и цветная точка статуса.
+// Плашка-чип и цветная точка статуса.
 // Тона статусов совпадают с DayStatus из «Смен»: shift / missed / leave / off.
+// Пропуски и перерасход показываем не только цветом: у тона missed сам ставится значок ✕,
+// у danger — «!» (если не передан свой значок).
 import type { ReactNode } from 'react'
+import { CircleAlert, X } from 'lucide-react'
 import styles from './Badge.module.css'
 
 export type BadgeTone =
@@ -18,10 +21,21 @@ interface BadgeProps {
   children: ReactNode
 }
 
+// Значок по умолчанию для «плохих» тонов.
+const DEFAULT_ICON: Partial<Record<BadgeTone, ReactNode>> = {
+  missed: <X size={12} strokeWidth={3} />,
+  danger: <CircleAlert size={12} strokeWidth={2.5} />,
+}
+
 export function Badge({ tone = 'neutral', icon, children }: BadgeProps) {
+  const shown = icon ?? DEFAULT_ICON[tone]
   return (
     <span className={`${styles.badge} ${styles[tone]}`}>
-      {icon && <span className={styles.icon}>{icon}</span>}
+      {shown && (
+        <span className={styles.icon} aria-hidden="true">
+          {shown}
+        </span>
+      )}
       {children}
     </span>
   )

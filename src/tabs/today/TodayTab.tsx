@@ -1,5 +1,5 @@
 // Вкладка «Сегодня» — главное на один экран. Порядок:
-//   статус дня → план сна (если смена сегодня/завтра) → прогноз Турции одной фразой
+//   статус дня и что дальше → прогноз Турции одной фразой
 //   и «можно потратить» → напоминания (непереведённые доли дохода) → задачи →
 //   привычки и лучшая серия → мини-неделя пн–вс со сменами.
 // На компьютере две колонки (слева день и деньги, справа задачи, привычки и неделя) —
@@ -57,7 +57,7 @@ export function TodayTab() {
 
       <div className={styles.grid}>
         <div className={styles.column}>
-          <TodayStatusCard status={todayStatus(today, shifts)} focus={shiftFocus(today, shifts)} shifts={shifts} />
+          <TodayStatusCard status={todayStatus(today, shifts)} focus={shiftFocus(today, shifts)} />
           <TodayMoneyCard
             money={money}
             forecast={turkeyForecast(money, shifts, today)}
@@ -81,6 +81,8 @@ export function TodayTab() {
             isDoneToday={(id) => isMarked(habits, id, today)}
             streakOf={(id) => dayStreak(habits.marks[id] ?? [], today)}
             shiftStreak={shiftStreak(shifts, today)}
+            shifts={shifts}
+            today={today}
             best={bestStreak(habits, shifts, today)}
             onToggle={(id) => setHabits((prev) => toggleMark(prev, id, today))}
           />

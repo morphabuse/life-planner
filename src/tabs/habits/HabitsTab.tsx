@@ -1,5 +1,5 @@
 // Вкладка «Привычки»: активные привычки с сериями и сеткой за 8 недель,
-// автопривычка «Смены без пропусков», добавление и архив.
+// автопривычка «Смены без пропусков» (полоска из 14 квадратиков), добавление и архив.
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Plus, RotateCcw } from 'lucide-react'
@@ -20,6 +20,7 @@ import {
   workedShiftDates,
 } from './habitsLogic'
 import { HabitCard } from './HabitCard'
+import { ShiftStreakStrip } from './ShiftStreakStrip'
 import styles from './HabitsTab.module.css'
 
 export function HabitsTab() {
@@ -66,6 +67,7 @@ export function HabitsTab() {
         streak={shiftStreak(shifts, today)}
         today={today}
         isDone={(date) => worked.has(date)}
+        replaceGrid={<ShiftStreakStrip shifts={shifts} today={today} />}
       />
 
       <Card compact title="Новая привычка">

@@ -1,8 +1,9 @@
-/* Как Card, но шапка — кнопка «свернуть / развернуть». */
+/* Как Card (поверхность, рамка, свечение), но шапка — кнопка «свернуть / развернуть». */
 .collapsible {
   background: var(--color-surface);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-lg);
+  box-shadow: var(--glow-card);
   transition: border-color var(--transition-fast);
 }
 
@@ -34,8 +35,10 @@
 }
 
 .title {
+  font-family: var(--font-display);
   font-size: var(--text-md);
   font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
 }
 
 .subtitle {

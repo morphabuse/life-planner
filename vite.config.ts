@@ -29,9 +29,9 @@ export default defineConfig({
         start_url: base,
         scope: base,
         display: 'standalone',
-        // Цвета — из токенов светлой темы: фон страницы и поверхность шапки.
-        background_color: '#f6f5f2',
-        theme_color: '#ffffff',
+        // Цвета — из токенов: фон страницы (--color-bg), тема одна — тёмная.
+        background_color: '#08080c',
+        theme_color: '#08080c',
         icons: [
           { src: 'pwa-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512.png', sizes: '512x512', type: 'image/png' },

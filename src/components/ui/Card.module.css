@@ -1,7 +1,9 @@
+/* Карточка: тёмная поверхность, тонкая светлая рамка и мягкое свечение. */
 .card {
   background: var(--color-surface);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-lg);
+  box-shadow: var(--glow-card);
   padding: var(--space-6);
   transition: border-color var(--transition-fast);
 }
@@ -43,6 +45,7 @@
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
 }

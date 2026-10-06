@@ -1,11 +1,12 @@
 // Привычки на сегодня: отметка в один клик. Автопривычка «Смены без пропусков» —
-// только серия (она считается сама из «Смен»).
+// серия и полоска из 14 квадратиков за 2 недели (считается сама из «Смен»).
 import { Check, Circle } from 'lucide-react'
-import type { Habit } from '../../types'
+import type { Habit, ShiftsData } from '../../types'
 import { Button, Card } from '../../components/ui'
 import { AUTO_SHIFTS_NAME, streakText } from '../habits/habitsLogic'
 import type { Streak } from '../habits/habitsLogic'
 import type { BestStreak } from './todayLogic'
+import { ShiftStreakStrip } from '../habits/ShiftStreakStrip'
 import { plural } from '../money/format'
 import styles from '../habits/HabitsTab.module.css'
 
@@ -17,11 +18,13 @@ interface Props {
   isDoneToday: (id: string) => boolean
   streakOf: (id: string) => Streak
   shiftStreak: Streak
+  shifts: ShiftsData // для полоски серии смен
+  today: string
   onToggle: (id: string) => void
   best: BestStreak | null // лучшая текущая серия
 }
 
-export function TodayHabitsCard({ habits, isDoneToday, streakOf, shiftStreak, onToggle, best }: Props) {
+export function TodayHabitsCard({ habits, isDoneToday, streakOf, shiftStreak, shifts, today, onToggle, best }: Props) {
   const done = habits.filter((h) => isDoneToday(h.id)).length
 
   return (
@@ -56,9 +59,12 @@ export function TodayHabitsCard({ habits, isDoneToday, streakOf, shiftStreak, on
             </li>
           )
         })}
-        {/* Автопривычка — просто строка текста (переносится на узком экране). */}
+        {/* Автопривычка — строка текста (переносится на узком экране) и полоска смен. */}
         <li className={styles.todayAuto}>
-          {AUTO_SHIFTS_NAME} — {lowerFirst(streakText(shiftStreak, 'shift'))}
+          <span>
+            {AUTO_SHIFTS_NAME} — {lowerFirst(streakText(shiftStreak, 'shift'))}
+          </span>
+          <ShiftStreakStrip shifts={shifts} today={today} />
         </li>
       </ul>
     </Card>

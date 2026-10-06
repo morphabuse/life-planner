@@ -1,7 +1,8 @@
 // Карточка одной привычки: серия и рекорд, отметка за сегодня, сетка за 8 недель,
-// переименование и архив. Для автопривычки (смены) — только чтение.
+// переименование и архив. Для автопривычки (смены) — только чтение и вместо сетки
+// своя полоска (replaceGrid).
 import { useState } from 'react'
-import type { FormEvent } from 'react'
+import type { FormEvent, ReactNode } from 'react'
 import { Archive, Check, Pencil } from 'lucide-react'
 import { Badge, Button, Card, Input } from '../../components/ui'
 import { streakText } from './habitsLogic'
@@ -18,9 +19,10 @@ interface Props {
   onToggle?: (date: string) => void
   onRename?: (name: string) => void
   onArchive?: () => void
+  replaceGrid?: ReactNode // показать это вместо сетки за 8 недель
 }
 
-export function HabitCard({ name, streak, today, isDone, auto, onToggle, onRename, onArchive }: Props) {
+export function HabitCard({ name, streak, today, isDone, auto, onToggle, onRename, onArchive, replaceGrid }: Props) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(name)
 
@@ -99,7 +101,9 @@ export function HabitCard({ name, streak, today, isDone, auto, onToggle, onRenam
           </Button>
         </form>
       )}
-      <HabitGrid today={today} isDone={isDone} onToggle={auto ? undefined : onToggle} label={name} />
+      {replaceGrid ?? (
+        <HabitGrid today={today} isDone={isDone} onToggle={auto ? undefined : onToggle} label={name} />
+      )}
     </Card>
   )
 }

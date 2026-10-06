@@ -1,10 +1,8 @@
-// Карточка «Ближайшая смена» с подсказкой по сну.
-import { BedDouble } from 'lucide-react'
+// Карточка «Ближайшая смена»: дата и через сколько дней.
 import type { ShiftsData } from '../../types'
 import { Card } from '../../components/ui'
 import { addDays, daysBetween, formatDayLong, formatDayShort } from '../../utils/date'
-import { SHIFT_HOURS } from './sleep'
-import { sleepTips } from './sleep'
+import { SHIFT_HOURS } from './schedule'
 import styles from './ShiftsTab.module.css'
 
 interface Props {
@@ -38,18 +36,6 @@ export function NextShiftCard({ nextShift, data, today }: Props) {
       <p className={styles.caption}>
         Смена {SHIFT_HOURS}, до утра {formatDayShort(addDays(nextShift, 1))}
       </p>
-
-      <div className={styles.sleep}>
-        <div className={styles.sleepTitle}>
-          <BedDouble size={16} aria-hidden="true" />
-          Сон
-        </div>
-        <ul className={styles.sleepList}>
-          {sleepTips(nextShift, data).map((tip) => (
-            <li key={tip}>{tip}</li>
-          ))}
-        </ul>
-      </div>
     </Card>
   )
 }

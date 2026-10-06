@@ -1,20 +1,14 @@
-// Мини-неделя пн–вс: дни окрашены по статусу из «Смен», сегодня выделено.
-import type { DayStatus, ShiftsData } from '../../types'
+// Мини-неделя пн–вс: квадраты дней как в календаре «Смен», сегодня в белой рамке.
+import type { ShiftsData } from '../../types'
 import { Card } from '../../components/ui'
 import { formatDayShort } from '../../utils/date'
-import { STATUS_LABELS, getEntry } from '../shifts/schedule'
+import { MARK_LABELS, dayMark, getEntry } from '../shifts/schedule'
+import { DaySquare } from '../shifts/DaySquare'
 import { weekDates, weekStartOf } from '../week/weekLogic'
 import { plural } from '../money/format'
 import styles from './TodayTab.module.css'
 
 const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
-
-const STATUS_CLASS: Record<DayStatus, string> = {
-  shift: styles.dayShift,
-  missed: styles.dayMissed,
-  leave: styles.dayLeave,
-  off: styles.dayOff,
-}
 
 export function TodayWeekStrip({ today, shifts }: { today: string; shifts: ShiftsData }) {
   const dates = weekDates(weekStartOf(today))
@@ -24,19 +18,17 @@ export function TodayWeekStrip({ today, shifts }: { today: string; shifts: Shift
     <Card compact title="Неделя" subtitle={count > 0 ? `${count} ${plural(count, 'смена', 'смены', 'смен')}` : 'Смен на этой неделе нет'}>
       <ol className={styles.week}>
         {dates.map((date, i) => {
-          const entry = getEntry(date, shifts)
-          const classes = [styles.weekDay, entry && STATUS_CLASS[entry.status], date === today && styles.weekToday]
-            .filter(Boolean)
-            .join(' ')
+          const mark = dayMark(date, shifts, today)
           return (
-            <li
-              key={date}
-              className={classes}
-              aria-label={`${formatDayShort(date)}: ${entry ? STATUS_LABELS[entry.status] : 'смены нет'}`}
-            >
+            <li key={date} className={styles.weekDay}>
               <span className={styles.weekName}>{WEEKDAYS[i]}</span>
-              <span className={styles.weekNumber}>{Number(date.slice(8))}</span>
-              <span className={styles.weekTag}>{entry ? STATUS_LABELS[entry.status].toLowerCase() : ''}</span>
+              <DaySquare
+                mark={mark}
+                isToday={date === today}
+                label={`${formatDayShort(date)}: ${mark ? MARK_LABELS[mark] : 'смены нет'}`}
+              >
+                <span className={styles.weekNumber}>{Number(date.slice(8))}</span>
+              </DaySquare>
             </li>
           )
         })}
