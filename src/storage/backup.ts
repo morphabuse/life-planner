@@ -19,7 +19,7 @@ import {
 } from './validators'
 
 // Метка «это бэкап именно нашего приложения».
-const APP_ID = 'life-planner'
+export const APP_ID = 'life-planner'
 
 // Версия формата.
 // v1 — только копилка.
@@ -32,7 +32,7 @@ const APP_ID = 'life-planner'
 // v8 — + итоги недель («Что получилось» / «Что мешало») в данных недели.
 // v9 — копилки больше нет: деньги со счетами-конвертами (Жизнь, Турция, Одежда и уход),
 //      доходами за смены, отметками «Перевёл», введёнными остатками; цель — в настройках денег.
-const BACKUP_VERSION = 9
+export const BACKUP_VERSION = 9
 
 // Бэкап после чтения и проверки.
 export interface BackupFile {
@@ -104,7 +104,12 @@ export function parseBackup(text: string): BackupFile {
   } catch {
     throw new Error('Файл не похож на JSON — возможно, выбран не тот файл.')
   }
+  return parseBackupData(parsed)
+}
 
+// Проверяет уже прочитанный объект бэкапа. Тем же кодом проверяются данные из облака
+// (синхронизация собирает их в объект формата бэкапа).
+export function parseBackupData(parsed: unknown): BackupFile {
   if (!isObject(parsed) || parsed.app !== APP_ID) {
     throw new Error('Это не бэкап планировщика.')
   }

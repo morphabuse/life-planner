@@ -1,0 +1,86 @@
+/* Синхронизация: статус в шапке, панель аккаунта, вопрос «какие данные оставить». */
+
+/* Статус — мелкая строка под названием сайта. button. — чтобы перебить размеры кнопки sm. */
+button.status {
+  height: auto;
+  gap: var(--space-1);
+  padding: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+}
+
+button.statusProblem {
+  color: var(--status-danger-fg);
+}
+
+.form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-3);
+  align-items: end;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.form .buttons {
+  grid-column: 1 / -1;
+  margin-top: 0;
+}
+
+.caption {
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.ok,
+.error {
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.ok {
+  color: var(--status-success-fg);
+}
+
+.error {
+  color: var(--status-danger-fg);
+}
+
+.choice {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.choice dt {
+  color: var(--color-text-muted);
+}
+
+.choice dd {
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .choice {
+    grid-template-columns: 1fr;
+  }
+
+  .choice dd {
+    margin-bottom: var(--space-2);
+  }
+}
+
+.intro {
+  margin-bottom: var(--space-4);
+  overflow-wrap: anywhere; /* длинный email не раздвигает карточку */
+}

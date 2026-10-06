@@ -14,6 +14,16 @@ export function readJson<T>(key: string, fallback: T): T {
   }
 }
 
+// Кто хочет знать о каждом сохранении (синхронизация с облаком: изменилось — пора отправить).
+type WriteListener = (key: string) => void
+const listeners = new Set<WriteListener>()
+
+// Подписка на сохранения. Возвращает функцию отписки.
+export function onWrite(listener: WriteListener): () => void {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
 // Сохраняет значение как JSON по ключу.
 export function writeJson(key: string, value: unknown): void {
   try {
@@ -21,7 +31,9 @@ export function writeJson(key: string, value: unknown): void {
   } catch (error) {
     // Например, если место в хранилище закончилось.
     console.error(`Не удалось сохранить «${key}»`, error)
+    return
   }
+  listeners.forEach((listener) => listener(key))
 }
 
 // Удаляет значение по ключу (например, после переноса старых данных в новый формат).

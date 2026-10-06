@@ -8,6 +8,10 @@ import { HabitsTab } from './tabs/habits/HabitsTab'
 import { BackupControls } from './components/BackupControls'
 import { ThemeToggle } from './components/ThemeToggle'
 import { UpdatePrompt } from './components/UpdatePrompt'
+import { SyncStatus } from './components/sync/SyncStatus'
+import { AccountCard } from './components/sync/AccountCard'
+import { SyncChoiceCard } from './components/sync/SyncChoiceCard'
+import { onDataReplaced, startSync, useSyncState } from './sync/syncEngine'
 import styles from './App.module.css'
 
 // Список вкладок: id для кода и подпись для кнопки.
@@ -43,6 +47,14 @@ function App() {
   // поэтому после загрузки бэкапа увеличиваем номер: он стоит в key у <main>,
   // а смена key заставляет React пересоздать вкладку — и она перечитает данные.
   const [dataVersion, setDataVersion] = useState(0)
+  // Синхронизация с облаком: статус для шапки. Пришли данные из облака — тот же приём
+  // с dataVersion: вкладка пересоздаётся и перечитывает хранилище.
+  const sync = useSyncState()
+  const [accountOpen, setAccountOpen] = useState(false)
+  useEffect(() => {
+    startSync()
+    return onDataReplaced(() => setDataVersion((v) => v + 1))
+  }, [])
   // Полоса вкладок: на узком экране она прокручивается, и выбранная вкладка может
   // оказаться за краем. После переключения подкручиваем её в видимую область.
   const tabsRef = useRef<HTMLElement>(null)
@@ -56,7 +68,11 @@ function App() {
     <>
       <header className={styles.header}>
         <div className={styles.headerInner}>
-          <h1 className={styles.brand}>Планировщик</h1>
+          {/* Название и под ним — статус синхронизации (мелко, помещается и на телефоне). */}
+          <div className={styles.brandBlock}>
+            <h1 className={styles.brand}>Планировщик</h1>
+            <SyncStatus sync={sync} open={accountOpen} onToggle={() => setAccountOpen((v) => !v)} />
+          </div>
 
           {/* Вкладки-сегменты. role="tablist"/"tab" — чтобы программы чтения с экрана
               понимали, что это переключатель разделов. */}
@@ -81,6 +97,14 @@ function App() {
           </div>
         </div>
       </header>
+
+      {/* Вне <main>: при обновлении данных вкладка пересоздаётся, а эти карточки — нет. */}
+      {(accountOpen || sync.choice) && (
+        <div className={styles.notices}>
+          {sync.choice && <SyncChoiceCard choice={sync.choice} />}
+          {accountOpen && <AccountCard sync={sync} onClose={() => setAccountOpen(false)} />}
+        </div>
+      )}
 
       <main key={dataVersion} className={styles.content}>
         {renderTab(activeTab)}

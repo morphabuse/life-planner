@@ -15,6 +15,12 @@
   padding: var(--space-3) var(--space-4);
 }
 
+.brandBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
 .brand {
   font-size: var(--text-md);
   font-weight: var(--weight-semibold);
@@ -86,4 +92,18 @@
   max-width: var(--content-max-width);
   margin: 0 auto;
   padding: var(--space-8) var(--space-4) var(--space-12);
+}
+
+/* Карточки синхронизации (вход, «какие данные оставить») — над содержимым вкладки. */
+.notices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4) 0;
+}
+
+.notices + .content {
+  padding-top: var(--space-4);
 }
