@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { CalendarDays, House, ListChecks, Repeat, Wallet } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import type { TabId } from './types'
 import { TodayTab } from './tabs/today/TodayTab'
 import { MoneyTab } from './tabs/money/MoneyTab'
@@ -7,6 +9,7 @@ import { ShiftsTab } from './tabs/shifts/ShiftsTab'
 import { HabitsTab } from './tabs/habits/HabitsTab'
 import { BackupControls } from './components/BackupControls'
 import { Backdrop } from './components/Backdrop'
+import { BottomNav } from './components/BottomNav'
 import { UpdatePrompt } from './components/UpdatePrompt'
 import { SyncStatus } from './components/sync/SyncStatus'
 import { AccountCard } from './components/sync/AccountCard'
@@ -14,14 +17,20 @@ import { SyncChoiceCard } from './components/sync/SyncChoiceCard'
 import { onDataReplaced, startSync, useSyncState } from './sync/syncEngine'
 import styles from './App.module.css'
 
-// Список вкладок: id для кода и подпись для кнопки.
+// Список вкладок: id для кода, подпись и значок (значок — для нижней панели на телефоне).
 // Чтобы добавить вкладку, достаточно дописать строку сюда и в renderTab.
-const TABS: { id: TabId; label: string }[] = [
-  { id: 'today', label: 'Сегодня' },
-  { id: 'money', label: 'Деньги' },
-  { id: 'week', label: 'Неделя' },
-  { id: 'shifts', label: 'Смены' },
-  { id: 'habits', label: 'Привычки' },
+export interface TabInfo {
+  id: TabId
+  label: string
+  icon: LucideIcon
+}
+
+const TABS: TabInfo[] = [
+  { id: 'today', label: 'Сегодня', icon: House },
+  { id: 'money', label: 'Деньги', icon: Wallet },
+  { id: 'week', label: 'Неделя', icon: ListChecks },
+  { id: 'shifts', label: 'Смены', icon: CalendarDays },
+  { id: 'habits', label: 'Привычки', icon: Repeat },
 ]
 
 // Возвращает компонент для выбранной вкладки.
@@ -55,13 +64,9 @@ function App() {
     startSync()
     return onDataReplaced(() => setDataVersion((v) => v + 1))
   }, [])
-  // Полоса вкладок: на узком экране она прокручивается, и выбранная вкладка может
-  // оказаться за краем. После переключения подкручиваем её в видимую область.
-  const tabsRef = useRef<HTMLElement>(null)
+  // Сменил раздел — показываем его с начала, а не с того места, где был прошлый.
   useEffect(() => {
-    tabsRef.current
-      ?.querySelector('[aria-selected="true"]')
-      ?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    window.scrollTo(0, 0)
   }, [activeTab])
 
   return (
@@ -76,9 +81,10 @@ function App() {
             <SyncStatus sync={sync} open={accountOpen} onToggle={() => setAccountOpen((v) => !v)} />
           </div>
 
-          {/* Вкладки-сегменты. role="tablist"/"tab" — чтобы программы чтения с экрана
-              понимали, что это переключатель разделов. */}
-          <nav ref={tabsRef} className={styles.segments} role="tablist" aria-label="Разделы">
+          {/* Вкладки-сегменты (на компьютере; на телефоне вместо них — нижняя панель).
+              role="tablist"/"tab" — чтобы программы чтения с экрана понимали,
+              что это переключатель разделов. */}
+          <nav className={styles.segments} role="tablist" aria-label="Разделы">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
@@ -110,6 +116,9 @@ function App() {
       <main key={dataVersion} className={styles.content}>
         {renderTab(activeTab)}
       </main>
+
+      {/* Нижняя панель разделов — только на телефоне (≤ 640 px), показ решает CSS. */}
+      <BottomNav tabs={TABS} active={activeTab} onSelect={setActiveTab} />
 
       <UpdatePrompt />
     </>

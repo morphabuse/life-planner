@@ -8,7 +8,7 @@ import styles from './Button.module.css'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'text'
-  size?: 'sm' | 'md'
+  size?: 'sm' | 'md' | 'lg' // lg — 44 px, удобная зона нажатия пальцем на телефоне
   icon?: ReactNode // иконка слева, например <Plus size={16} />
   iconOnly?: boolean // кнопка только с иконкой — тогда обязателен aria-label
   danger?: boolean // при наведении краснеет (удаление)

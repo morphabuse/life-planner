@@ -44,6 +44,15 @@ export function daysInMonth(year: number, monthIndex: number): number {
   return new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate()
 }
 
+// Название месяца с годом: (2026, 9) → 'Октябрь 2026'. monthIndex — 0–11.
+export function formatMonthTitle(year: number, monthIndex: number): string {
+  const text = new Date(Date.UTC(year, monthIndex, 1)).toLocaleDateString('ru-RU', {
+    month: 'long',
+    timeZone: 'UTC',
+  })
+  return `${text[0].toUpperCase()}${text.slice(1)} ${year}`
+}
+
 // День недели, где понедельник = 0, …, воскресенье = 6 (в Date воскресенье = 0).
 export function weekdayMondayFirst(iso: string): number {
   return (new Date(isoToUtcMs(iso)).getUTCDay() + 6) % 7

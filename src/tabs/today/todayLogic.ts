@@ -2,7 +2,8 @@
 // из «Смен», «Недели», «Привычек» и «Денег», чтобы ничего не дублировать.
 import type { DayStatus, HabitsData, ShiftsData } from '../../types'
 import { addDays } from '../../utils/date'
-import { findNextShift, getEntry } from '../shifts/schedule'
+import { dayMark, findNextShift, getEntry } from '../shifts/schedule'
+import { weekDates, weekStartOf } from '../week/weekLogic'
 import { AUTO_SHIFTS_NAME, dayStreak, shiftStreak } from '../habits/habitsLogic'
 
 // Что дальше со сменами — для подзаголовка статуса дня.
@@ -48,4 +49,28 @@ export function bestStreak(habits: HabitsData, shifts: ShiftsData, today: string
     best = { name: AUTO_SHIFTS_NAME, current: shiftsRun, unit: 'shift' }
   }
   return best
+}
+
+// Смены текущей недели (пн–вс) для карточки смены: «X / Y смен за неделю».
+//   worked  — отработано (смены в прошедших днях)
+//   planned — впереди (смены сегодня и дальше; сегодняшняя ещё не отработана)
+//   missed  — «не вышел» (смена была запланирована)
+//   total   — всего отмеченных смен недели = worked + planned + missed
+export interface WeekShiftStats {
+  worked: number
+  planned: number
+  missed: number
+  total: number
+}
+
+export function weekShiftStats(today: string, shifts: ShiftsData): WeekShiftStats {
+  const stats = { worked: 0, planned: 0, missed: 0, total: 0 }
+  for (const date of weekDates(weekStartOf(today))) {
+    const mark = dayMark(date, shifts, today)
+    if (mark === 'worked') stats.worked++
+    else if (mark === 'planned') stats.planned++
+    else if (mark === 'missed') stats.missed++
+  }
+  stats.total = stats.worked + stats.planned + stats.missed
+  return stats
 }

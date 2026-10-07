@@ -77,15 +77,11 @@
   margin-left: auto; /* прижимаем вправо */
 }
 
-/* На узком экране: название и кнопки — в первой строке, вкладки — во второй, на всю ширину. */
+/* На узком экране вкладок сверху нет — разделы переключаются нижней панелью (BottomNav).
+   В шапке остаются название и кнопки бэкапа. */
 @media (max-width: 640px) {
-  .headerActions {
-    order: 2;
-  }
-
   .segments {
-    order: 3;
-    width: 100%;
+    display: none;
   }
 }
 
@@ -94,7 +90,7 @@
 .content {
   max-width: var(--content-max-width);
   margin: 0 auto;
-  padding: var(--space-6) var(--space-4) var(--space-8);
+  padding: var(--space-6) var(--space-4);
 }
 
 /* Карточки синхронизации (вход, «какие данные оставить») — над содержимым вкладки. */
@@ -109,4 +105,11 @@
 
 .notices + .content {
   padding-top: var(--space-4);
+}
+
+/* На телефоне снизу закреплена панель разделов — контент заканчивается над ней. */
+@media (max-width: 640px) {
+  .content {
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + var(--space-6));
+  }
 }

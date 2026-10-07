@@ -8,9 +8,10 @@ import type { TurkeyForecast } from './turkeyLogic'
 import { forecastText } from './turkeyLogic'
 import styles from './MoneyTab.module.css'
 
-export function ForecastPhrase({ forecast }: { forecast: TurkeyForecast }) {
+// className — подправить отступы там, где фраза стоит (например, сразу под шапкой карточки).
+export function ForecastPhrase({ forecast, className }: { forecast: TurkeyForecast; className?: string }) {
   return (
-    <p className={`${styles.forecast} ${styles[`forecast_${forecast.verdict}`]}`} role="status">
+    <p className={[styles.forecast, styles[`forecast_${forecast.verdict}`], className].filter(Boolean).join(' ')} role="status">
       <span className={styles.forecastDot} aria-hidden="true" />
       {/* Нехватку показываем не только цветом — ещё и значком «!». */}
       {forecast.verdict === 'short' && <CircleAlert size={14} aria-hidden="true" className={styles.forecastIcon} />}

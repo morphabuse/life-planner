@@ -1,6 +1,6 @@
-// Привычки на сегодня: отметка в один клик. Автопривычка «Смены без пропусков» —
+// Привычки на сегодня: название и серия, кнопка «Отметить» / «✓ Сделано» в один клик. Автопривычка «Смены без пропусков» —
 // серия и полоска из 14 квадратиков за 2 недели (считается сама из «Смен»).
-import { Check, Circle } from 'lucide-react'
+import { Check } from 'lucide-react'
 import type { Habit, ShiftsData } from '../../types'
 import { Button, Card } from '../../components/ui'
 import { AUTO_SHIFTS_NAME, streakText } from '../habits/habitsLogic'
@@ -44,18 +44,23 @@ export function TodayHabitsCard({ habits, isDoneToday, streakOf, shiftStreak, sh
           const streak = streakOf(habit.id)
           return (
             <li key={habit.id} className={styles.todayRow}>
+              <span className={styles.todayName}>
+                {habit.name}
+                <span className={styles.todayStreak}>
+                  {streak.current > 0 ? `${streak.current} подряд` : 'новая серия'}
+                </span>
+              </span>
+              {/* Отметка в один клик; кнопка 44 px — удобно пальцем. */}
               <Button
-                size="sm"
+                size="lg"
                 className={styles.todayButton}
-                icon={doneToday ? <Check size={16} /> : <Circle size={16} />}
+                icon={doneToday ? <Check size={16} /> : undefined}
                 aria-pressed={doneToday}
+                aria-label={`${habit.name}: ${doneToday ? 'сделано сегодня, снять отметку' : 'отметить сегодня'}`}
                 onClick={() => onToggle(habit.id)}
               >
-                {habit.name}
+                {doneToday ? 'Сделано' : 'Отметить'}
               </Button>
-              <span className={styles.todayStreak}>
-                {streak.current > 0 ? `${streak.current} подряд` : 'новая серия'}
-              </span>
             </li>
           )
         })}

@@ -499,7 +499,7 @@
 .incomes {
   display: flex;
   flex-direction: column;
-  margin: 0;
+  margin: var(--space-4) 0 0; /* под плиткой-кнопкой «Получил за смену» */
   padding: 0;
   list-style: none;
 }
@@ -553,14 +553,13 @@
   text-decoration: line-through;
 }
 
+/* Форма дохода открывается сразу под плиткой-кнопкой. */
 .incomeForm {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   gap: var(--space-3);
   margin-top: var(--space-4);
-  padding-top: var(--space-4);
-  border-top: var(--border-width) solid var(--color-border);
 }
 
 .incomeForm + .captionXs {

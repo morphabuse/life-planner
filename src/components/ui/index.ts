@@ -1,10 +1,12 @@
 // Единые компоненты интерфейса. Новые экраны собираются из них.
+export { ActionTile } from './ActionTile'
 export { Button } from './Button'
 export { Card } from './Card'
 export { Collapsible } from './Collapsible'
 export { Input } from './Input'
 export { ProgressBar } from './ProgressBar'
 export { Select } from './Select'
+export { Sheet } from './Sheet'
 export { Textarea } from './Textarea'
 export { Badge, StatusDot } from './Badge'
 export type { BadgeTone } from './Badge'

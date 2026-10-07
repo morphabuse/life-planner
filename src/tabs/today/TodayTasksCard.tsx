@@ -49,9 +49,16 @@ export function TodayTasksCard({ tasks, onAdd, onToggle }: Props) {
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
-        <Button type="submit" size="sm" icon={<Plus size={16} />} disabled={!text.trim()}>
-          Добавить
-        </Button>
+        {/* Кнопка «+» 44×44 — удобно попасть пальцем. */}
+        <Button
+          type="submit"
+          size="lg"
+          iconOnly
+          icon={<Plus size={18} />}
+          aria-label="Добавить задачу"
+          title="Добавить задачу"
+          disabled={!text.trim()}
+        />
       </form>
     </Card>
   )

@@ -1,5 +1,5 @@
-// Карточка одной привычки: серия и рекорд, отметка за сегодня, сетка за 8 недель,
-// переименование и архив. Для автопривычки (смены) — только чтение и вместо сетки
+// Карточка одной привычки: серия и рекорд, отметка за сегодня, сетка за 8 недель
+// (по нажатию — календарь месяца, где отмечаются прошлые дни), переименование и архив. Для автопривычки (смены) — только чтение и вместо сетки
 // своя полоска (replaceGrid).
 import { useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
@@ -8,6 +8,7 @@ import { Badge, Button, Card, Input } from '../../components/ui'
 import { streakText } from './habitsLogic'
 import type { Streak } from './habitsLogic'
 import { HabitGrid } from './HabitGrid'
+import { HabitMonthSheet } from './HabitMonthSheet'
 import styles from './HabitsTab.module.css'
 
 interface Props {
@@ -25,6 +26,7 @@ interface Props {
 export function HabitCard({ name, streak, today, isDone, auto, onToggle, onRename, onArchive, replaceGrid }: Props) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(name)
+  const [calendarOpen, setCalendarOpen] = useState(false) // календарь месяца поверх страницы
 
   function handleRename(event: FormEvent) {
     event.preventDefault()
@@ -102,7 +104,23 @@ export function HabitCard({ name, streak, today, isDone, auto, onToggle, onRenam
         </form>
       )}
       {replaceGrid ?? (
-        <HabitGrid today={today} isDone={isDone} onToggle={auto ? undefined : onToggle} label={name} />
+        <HabitGrid
+          today={today}
+          isDone={isDone}
+          onOpen={auto || !onToggle ? undefined : () => setCalendarOpen(true)}
+          label={name}
+        />
+      )}
+      {!auto && onToggle && (
+        <HabitMonthSheet
+          open={calendarOpen}
+          onClose={() => setCalendarOpen(false)}
+          name={name}
+          subtitle={streakText(streak, 'day')}
+          today={today}
+          isDone={isDone}
+          onToggle={onToggle}
+        />
       )}
     </Card>
   )

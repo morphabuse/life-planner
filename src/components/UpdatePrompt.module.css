@@ -3,7 +3,7 @@
   position: fixed;
   left: 50%;
   bottom: var(--space-4);
-  z-index: 10;
+  z-index: 30; /* выше нижней панели разделов */
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -20,4 +20,11 @@
   min-width: 0;
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
+}
+
+/* На телефоне плашка — над нижней панелью разделов, не перекрывает её. */
+@media (max-width: 640px) {
+  .prompt {
+    bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + var(--space-3));
+  }
 }

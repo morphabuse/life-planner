@@ -39,6 +39,18 @@
   font-size: var(--text-sm);
 }
 
+/* Крупная — зона нажатия не меньше 44 px (частые действия на телефоне). */
+.lg {
+  height: var(--control-height-touch);
+  padding: 0 var(--space-5);
+  font-size: var(--text-base);
+}
+
+.iconOnly.lg {
+  width: var(--control-height-touch);
+  padding: 0;
+}
+
 .iconOnly.md {
   width: var(--control-height-md);
   padding: 0;
@@ -80,7 +92,8 @@
 }
 
 .text.sm,
-.text.md {
+.text.md,
+.text.lg {
   padding: 0 var(--space-3);
 }
 

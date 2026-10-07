@@ -9,7 +9,7 @@ import { averagePerShift, missedCost, monthIncome, monthPrefix } from '../money/
 import { formatMoney } from '../money/format'
 import { ChevronLeft, ChevronRight, CircleAlert } from 'lucide-react'
 import { Button, Card } from '../../components/ui'
-import { todayIso } from '../../utils/date'
+import { todayIso, formatMonthTitle } from '../../utils/date'
 import { fillTwoTwo, findNextShift, monthStats, setDay } from './schedule'
 import { NextShiftCard } from './NextShiftCard'
 import { MonthCalendar } from './MonthCalendar'
@@ -17,15 +17,6 @@ import { DayEditor } from './DayEditor'
 import { FillTwoTwoCard } from './FillTwoTwoCard'
 import { DayLegend } from './DayLegend'
 import styles from './ShiftsTab.module.css'
-
-// 'октябрь' + 2026 → 'Октябрь 2026'
-function monthTitle(year: number, monthIndex: number): string {
-  const text = new Date(Date.UTC(year, monthIndex, 1)).toLocaleDateString('ru-RU', {
-    month: 'long',
-    timeZone: 'UTC',
-  })
-  return `${text[0].toUpperCase()}${text.slice(1)} ${year}`
-}
 
 export function ShiftsTab() {
   const [data, setData] = useState<ShiftsData>(loadShifts)
@@ -83,7 +74,7 @@ export function ShiftsTab() {
       <NextShiftCard nextShift={nextShift} data={data} today={today} />
 
       <Card
-        title={monthTitle(view.year, view.monthIndex)}
+        title={formatMonthTitle(view.year, view.monthIndex)}
         actions={
           <>
             <Button variant="text" size="sm" onClick={goToday}>

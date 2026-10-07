@@ -3,6 +3,7 @@
 // и сверяет: сходится / добавлено из выписки / «проверь».
 // После дохода (с даты старта) — «Переведи X на Жизнь, Y на Турцию, Z на Одежду и уход»
 // с галочками «Перевёл».
+import { useState } from 'react'
 import { Check, Trash2 } from 'lucide-react'
 import { Badge, Button, Card } from '../../components/ui'
 import type { EnvelopeKind, MoneyData } from '../../types'
@@ -11,6 +12,7 @@ import type { ShiftIncome } from './moneyLogic'
 import { confirmedShares } from './moneyLogic'
 import { formatDate, formatMoney, formatMoneyExact, plural } from './format'
 import { IncomeShares } from './IncomeShares'
+import { IncomeButton } from './IncomeButton'
 import { IncomeForm } from './IncomeForm'
 import styles from './MoneyTab.module.css'
 
@@ -46,7 +48,14 @@ function StatusLine({ income }: { income: ShiftIncome }) {
 }
 
 export function IncomeCard({ incomes, money, defaultDate, onAddManual, onRemoveManual, onToggleTransfer }: Props) {
+  const [formOpen, setFormOpen] = useState(false)
   const total = incomes.reduce((s, i) => s + i.amountKop, 0) / 100
+
+  // Ввёл доход — форму закрываем: новая смена с раскладкой появится в списке под кнопкой.
+  function handleAdd(shiftDate: string, rub: number) {
+    onAddManual(shiftDate, rub)
+    setFormOpen(false)
+  }
 
   // Какие доли выписка счёта уже подтвердила (перевод на сумму доли нашёлся).
   const confirmed = confirmedShares(money)
@@ -62,6 +71,17 @@ export function IncomeCard({ incomes, money, defaultDate, onAddManual, onRemoveM
           : 'За этот месяц дохода нет — введи «Получил за смену» или загрузи выписку карты.'
       }
     >
+      {/* Плитка-кнопка «Получил за смену» — как на «Сегодня»; форма открывается под ней. */}
+      <IncomeButton open={formOpen} onToggle={() => setFormOpen((v) => !v)} />
+      {formOpen && (
+        <>
+          <IncomeForm defaultDate={defaultDate} onAdd={handleAdd} />
+          <p className={styles.captionXs}>
+            По желанию: выписка карты сама добавит недостающие доходы и сверит введённые.
+          </p>
+        </>
+      )}
+
       {sorted.length > 0 && (
         <ul className={styles.incomes}>
           {sorted.map((income) => (
@@ -93,10 +113,6 @@ export function IncomeCard({ incomes, money, defaultDate, onAddManual, onRemoveM
         </ul>
       )}
 
-      <IncomeForm defaultDate={defaultDate} onAdd={onAddManual} />
-      <p className={styles.captionXs}>
-        По желанию: выписка карты сама добавит недостающие доходы и сверит введённые.
-      </p>
     </Card>
   )
 }

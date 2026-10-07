@@ -1,15 +1,15 @@
 // Деньги на «Сегодня»: прогноз Турции одной фразой и «можно потратить»,
-// кнопка «Получил за смену» (после ввода — сразу раскладка по конвертам с галочками «Перевёл»),
+// плитка-кнопка «Получил за смену» (после ввода — под ней раскладка по конвертам с галочками «Перевёл»),
 // ниже — напоминания: доли дохода, которые ещё не отмечены «Перевёл».
 // Форма и раскладка — те же компоненты, что во вкладке «Деньги» (IncomeForm, IncomeShares).
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
 import { Button, Card } from '../../components/ui'
 import type { EnvelopeKind, MoneyData } from '../../types'
 import { formatDayShort } from '../../utils/date'
 import { ENVELOPE_TO, confirmedShares, pendingTransfers, shiftIncomes, spendable } from '../money/moneyLogic'
 import type { TurkeyForecast } from '../money/turkeyLogic'
 import { ForecastPhrase } from '../money/ForecastPhrase'
+import { IncomeButton } from '../money/IncomeButton'
 import { IncomeForm } from '../money/IncomeForm'
 import { IncomeShares } from '../money/IncomeShares'
 import { formatMoney, formatMoneyExact } from '../money/format'
@@ -45,24 +45,18 @@ export function TodayMoneyCard({ money, forecast, today, incomeDate, onAddIncome
       <Card
         compact
         title={`${money.settings.goal.title}: ${formatMoney(forecast.progress.saved)} из ${formatMoney(forecast.progress.target)}`}
-        actions={
-          <Button
-            size="sm"
-            icon={<Plus size={16} />}
-            aria-expanded={formOpen}
-            onClick={() => setFormOpen((v) => !v)}
-          >
-            Получил за смену
-          </Button>
-        }
       >
-        <ForecastPhrase forecast={forecast} />
+        <ForecastPhrase forecast={forecast} className={styles.forecast} />
         <p className={styles.spendLine}>
           Можно потратить:{' '}
           <span className={styles.spendValue}>{free ? formatMoney(free.rub) : '—'}</span>
           <span className={styles.caption}> · «Жизнь» + карта</span>
         </p>
 
+        {/* Главное действие — крупная плитка во всю ширину; форма и раскладка — под ней. */}
+        <div className={styles.incomeAction}>
+          <IncomeButton open={formOpen} onToggle={() => setFormOpen((v) => !v)} />
+        </div>
         {formOpen && <IncomeForm defaultDate={incomeDate} onAdd={handleAdd} />}
 
         {added && (
@@ -87,11 +81,11 @@ export function TodayMoneyCard({ money, forecast, today, incomeDate, onAddIncome
       </Card>
 
       {pending.length > 0 && (
-        <Card compact title="Напоминания" subtitle="Доли дохода, которые ещё не переведены">
-          <ul className={styles.tasks}>
+        <Card compact title="Напоминания">
+          <ul className={styles.reminders}>
             {pending.map((p) => (
               <li key={`${p.shiftDate}-${p.kind}`}>
-                <label className={styles.task}>
+                <label className={styles.reminder}>
                   {/* Галочка ставит ту же отметку «Перевёл», что во вкладке «Деньги». */}
                   <input type="checkbox" checked={false} onChange={() => onToggleTransfer(p.shiftDate, p.kind)} />
                   <span>

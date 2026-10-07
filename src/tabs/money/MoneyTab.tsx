@@ -17,7 +17,7 @@ import type {
 import { loadMoney, saveMoney } from '../../storage/moneyStorage'
 import { loadShifts, saveShifts } from '../../storage/shiftsStorage'
 import { Button, Card } from '../../components/ui'
-import { addDays, todayIso } from '../../utils/date'
+import { addDays, todayIso, formatMonthTitle } from '../../utils/date'
 import {
   ACCOUNT_LABELS,
   addManualIncome,
@@ -56,15 +56,6 @@ import { formatDate } from './format'
 import styles from './MoneyTab.module.css'
 
 type Mode = 'turkey' | 'month'
-
-// 'октябрь' + 2026 → 'Октябрь 2026'
-function monthTitle(year: number, monthIndex: number): string {
-  const text = new Date(Date.UTC(year, monthIndex, 1)).toLocaleDateString('ru-RU', {
-    month: 'long',
-    timeZone: 'UTC',
-  })
-  return `${text[0].toUpperCase()}${text.slice(1)} ${year}`
-}
 
 // Запоминает счёт из выписки: тип, период и остатки на начало и конец периода.
 function rememberAccount(money: MoneyData, parsed: ParsedStatement, kind: AccountKind): Record<string, AccountInfo> {
@@ -269,7 +260,7 @@ export function MoneyTab() {
 
           <div className={styles.monthNav}>
             <div className={styles.monthHeading}>
-              <h2 className={styles.monthTitle}>{monthTitle(view.year, view.monthIndex)}</h2>
+              <h2 className={styles.monthTitle}>{formatMonthTitle(view.year, view.monthIndex)}</h2>
               {until && <span className={styles.caption}>выписка карты по {formatDate(until)}</span>}
             </div>
             <div className={styles.monthButtons}>

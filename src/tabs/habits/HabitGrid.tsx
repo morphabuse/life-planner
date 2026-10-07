@@ -1,5 +1,7 @@
-// Календарь-сетка за последние 8 недель: колонки — недели, строки — дни (Пн…Вс).
+// Сетка за последние 8 недель — обзор: колонки — недели, строки — дни (Пн…Вс).
 // Отмеченный день — акцентная клетка, неотмеченный — нейтральная (без красного).
+// Клетки мелкие, поэтому сами не нажимаются: нажатие на сетку открывает календарь
+// месяца (onOpen), где у дней удобные крупные клетки.
 import { formatDayShort } from '../../utils/date'
 import { gridDays } from './habitsLogic'
 import styles from './HabitsTab.module.css'
@@ -7,41 +9,41 @@ import styles from './HabitsTab.module.css'
 interface Props {
   today: string
   isDone: (date: string) => boolean
-  // Если передано — клетку прошлого дня можно нажать, чтобы поставить/снять отметку.
-  onToggle?: (date: string) => void
+  onOpen?: () => void // если есть — сетка становится кнопкой «открыть календарь»
   label: string // для экранных чтецов: «Английский»
 }
 
-export function HabitGrid({ today, isDone, onToggle, label }: Props) {
-  return (
-    <div className={styles.grid} role="group" aria-label={`${label}: последние 8 недель`}>
-      {gridDays(today).map(({ date, future }) => {
-        const done = isDone(date)
-        const classes = [
-          styles.cell,
-          done && styles.cellDone,
-          future && styles.cellFuture,
-          date === today && styles.cellToday,
-        ]
-          .filter(Boolean)
-          .join(' ')
-        const title = `${formatDayShort(date)}${done ? ': отмечено' : ''}`
+export function HabitGrid({ today, isDone, onOpen, label }: Props) {
+  const cells = gridDays(today).map(({ date, future }) => {
+    const done = isDone(date)
+    const classes = [
+      styles.cell,
+      done && styles.cellDone,
+      future && styles.cellFuture,
+      date === today && styles.cellToday,
+    ]
+      .filter(Boolean)
+      .join(' ')
+    return <span key={date} className={classes} title={future ? undefined : `${formatDayShort(date)}${done ? ': отмечено' : ''}`} />
+  })
 
-        if (onToggle && !future) {
-          return (
-            <button
-              key={date}
-              type="button"
-              className={classes}
-              title={title}
-              aria-label={title}
-              aria-pressed={done}
-              onClick={() => onToggle(date)}
-            />
-          )
-        }
-        return <span key={date} className={classes} title={future ? undefined : title} />
-      })}
+  if (onOpen) {
+    return (
+      <button
+        type="button"
+        className={styles.gridButton}
+        aria-label={`${label}: последние 8 недель. Открыть календарь, чтобы отметить дни`}
+        onClick={onOpen}
+      >
+        <span className={styles.grid} aria-hidden="true">
+          {cells}
+        </span>
+      </button>
+    )
+  }
+  return (
+    <div className={styles.grid} role="img" aria-label={`${label}: последние 8 недель`}>
+      {cells}
     </div>
   )
 }

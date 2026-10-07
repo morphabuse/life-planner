@@ -33,6 +33,11 @@
 
 /* ---------- Деньги ---------- */
 
+/* Чип прогноза стоит сразу под шапкой карточки — свой верхний отступ не нужен. */
+p.forecast {
+  margin-top: 0;
+}
+
 /* «Можно потратить» — плитка внутри карточки. */
 .spendLine {
   display: flex;
@@ -53,6 +58,11 @@
 .caption {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
+}
+
+/* Плитка-кнопка «Получил за смену» — под «Можно потратить». */
+.incomeAction {
+  margin-top: var(--space-3);
 }
 
 /* Только что введённый доход и его раскладка по конвертам. */
@@ -79,7 +89,53 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------- Мини-неделя ---------- */
+/* ---------- Смена: «X / Y смен за неделю» и мини-неделя ---------- */
+
+.shiftHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.shiftHeadings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* Как заголовок карточки (Card). */
+.shiftTitle {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+}
+
+.weekCount {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.weekCountValue {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-extrabold);
+  line-height: var(--leading-tight);
+}
+
+.weekStats {
+  margin-top: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.weekMissed {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--status-danger-fg);
+}
 
 .week {
   display: grid;
@@ -112,6 +168,30 @@
   font-weight: var(--weight-semibold);
 }
 
+/* ---------- Напоминания: непереведённые доли ---------- */
+
+.reminders {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* На компьютере строки компактные (экран «Сегодня» должен влезть в 1280×800),
+   на телефоне — зона нажатия 44 px. */
+.reminder {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--control-height-sm);
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .reminder {
+    min-height: var(--control-height-touch);
+  }
+}
+
 /* ---------- Задачи ---------- */
 
 .tasks {
@@ -120,11 +200,12 @@
   list-style: none;
 }
 
+/* Вся строка — зона нажатия галочки, не ниже 44 px. */
 .task {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  min-height: var(--control-height-sm);
+  min-height: var(--control-height-touch);
   cursor: pointer;
 }
 
@@ -140,6 +221,5 @@
 
 .addInput {
   flex: 1;
-  height: var(--control-height-sm);
-  font-size: var(--text-sm);
+  height: var(--control-height-touch);
 }

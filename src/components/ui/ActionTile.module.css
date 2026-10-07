@@ -1,0 +1,50 @@
+/* Плитка-кнопка: заливка акцентом, без свечения и теней (как все кнопки). */
+.tile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  height: var(--control-height-tile);
+  padding: 0 var(--space-3);
+  background: var(--color-accent);
+  border: none;
+  border-radius: var(--radius-tile);
+  color: var(--color-on-accent);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.tile:hover {
+  background: var(--color-accent-hover);
+}
+
+/* Подложка значка 40×40. */
+.iconBox {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--icon-box);
+  height: var(--icon-box);
+  background: var(--color-on-accent-soft);
+  border-radius: var(--radius-icon);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: var(--leading-tight);
+}
+
+.title {
+  font-size: var(--text-md);
+  font-weight: var(--weight-extrabold);
+}
+
+.caption {
+  font-size: var(--text-note);
+  font-weight: var(--weight-medium);
+  opacity: 0.8;
+}

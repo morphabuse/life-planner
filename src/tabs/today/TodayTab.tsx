@@ -1,8 +1,8 @@
 // Вкладка «Сегодня» — главное на один экран. Порядок:
-//   статус дня и что дальше → прогноз Турции одной фразой
-//   и «можно потратить» → напоминания (непереведённые доли дохода) → задачи →
-//   привычки и лучшая серия → мини-неделя пн–вс со сменами.
-// На компьютере две колонки (слева день и деньги, справа задачи, привычки и неделя) —
+//   смена: статус дня, «X / Y смен за неделю» и мини-неделя → прогноз Турции одной фразой,
+//   «можно потратить» и «Получил за смену» → напоминания (непереведённые доли дохода) →
+//   задачи → привычки и лучшая серия.
+// На компьютере две колонки (слева смена и деньги, справа задачи и привычки) —
 // на 1280×800 без прокрутки; на телефоне — одна колонка в этом порядке.
 // Своих данных нет: задачи, привычки, доход и отметки «Перевёл» меняем в общих данных
 // через логику других вкладок. Смены только читаем — кроме одного случая: ввёл доход
@@ -17,12 +17,11 @@ import { formatDayLong, todayIso } from '../../utils/date'
 import { addTask, toggleTask } from '../week/weekLogic'
 import { turkeyForecast } from '../money/turkeyLogic'
 import { addManualIncome, defaultIncomeShiftDate, markShiftsByIncome, toggleTransfer } from '../money/moneyLogic'
-import { bestStreak, shiftFocus, todayStatus } from './todayLogic'
+import { bestStreak, shiftFocus, todayStatus, weekShiftStats } from './todayLogic'
 import { TodayStatusCard } from './TodayStatusCard'
 import { TodayMoneyCard } from './TodayMoneyCard'
 import { TodayTasksCard } from './TodayTasksCard'
 import { TodayHabitsCard } from './TodayHabitsCard'
-import { TodayWeekStrip } from './TodayWeekStrip'
 import { dayStreak, isMarked, shiftStreak, toggleMark } from '../habits/habitsLogic'
 import styles from './TodayTab.module.css'
 
@@ -57,7 +56,13 @@ export function TodayTab() {
 
       <div className={styles.grid}>
         <div className={styles.column}>
-          <TodayStatusCard status={todayStatus(today, shifts)} focus={shiftFocus(today, shifts)} />
+          <TodayStatusCard
+            status={todayStatus(today, shifts)}
+            focus={shiftFocus(today, shifts)}
+            week={weekShiftStats(today, shifts)}
+            today={today}
+            shifts={shifts}
+          />
           <TodayMoneyCard
             money={money}
             forecast={turkeyForecast(money, shifts, today)}
@@ -86,7 +91,6 @@ export function TodayTab() {
             best={bestStreak(habits, shifts, today)}
             onToggle={(id) => setHabits((prev) => toggleMark(prev, id, today))}
           />
-          <TodayWeekStrip today={today} shifts={shifts} />
         </div>
       </div>
     </section>
