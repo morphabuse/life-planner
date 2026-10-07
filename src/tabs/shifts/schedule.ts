@@ -52,7 +52,7 @@ export function setDay(data: ShiftsData, date: string, entry: DayEntry | null): 
   const days = { ...data.days }
   if (entry === null) delete days[date]
   else days[date] = entry
-  return { days }
+  return { ...data, days } // ...data — чтобы не потерять lastFill
 }
 
 // Ближайшая смена начиная с fromDate (включительно), или null.
@@ -73,14 +73,16 @@ export interface FillResult {
 }
 
 // Помощник «Заполнить 2/2»: с from по to (включительно) — 2 дня смена, 2 дня пропуск.
-// Ставит только смены и не трогает дни, которые уже отмечены.
+// Первый день (from) — первый день смены. Ставит только смены и не трогает дни,
+// которые уже отмечены. Запоминает проставленные даты в lastFill — для «Отменить»
+// (новое заполнение заменяет прошлую запись).
 export function fillTwoTwo(
   data: ShiftsData,
   from: string,
   to: string,
 ): FillResult {
   const days = { ...data.days }
-  let added = 0
+  const dates: string[] = []
   let skipped = 0
   for (let date = from; date <= to; date = addDays(date, 1)) {
     if (daysBetween(from, date) % 4 >= 2) continue // 3-й и 4-й день цикла — выходные
@@ -88,10 +90,34 @@ export function fillTwoTwo(
       skipped++
     } else {
       days[date] = { status: 'shift' }
-      added++
+      dates.push(date)
     }
   }
-  return { data: { days }, added, skipped }
+  return { data: { days, lastFill: { from, to, dates } }, added: dates.length, skipped }
+}
+
+export interface UndoResult {
+  data: ShiftsData
+  removed: number // сколько смен убрано
+  kept: number // сколько дней оставлено, потому что их поменяли вручную после заполнения
+}
+
+// Отмена последнего заполнения 2/2: убирает только дни, которые проставил этот запуск,
+// и только если там всё ещё «смена». День, который после заполнения поменяли вручную
+// (на «не вышел», отгул, выходной или очистили), не трогаем. Запись lastFill стирается.
+export function undoFill(data: ShiftsData): UndoResult {
+  const days = { ...data.days }
+  let removed = 0
+  let kept = 0
+  for (const date of data.lastFill?.dates ?? []) {
+    if (days[date]?.status === 'shift') {
+      delete days[date]
+      removed++
+    } else if (days[date]) {
+      kept++
+    }
+  }
+  return { data: { days }, removed, kept }
 }
 
 export interface MonthStats {

@@ -297,7 +297,7 @@ export function markShiftsByIncome(shifts: ShiftsData, dates: string[]): { shift
     days[date] = { status: 'shift' }
     marked++
   }
-  return { shifts: marked > 0 ? { days } : shifts, marked }
+  return { shifts: marked > 0 ? { ...shifts, days } : shifts, marked }
 }
 
 // Дата смены по умолчанию для «Получил за смену»: последняя отмеченная смена

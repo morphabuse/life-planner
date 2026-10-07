@@ -4,7 +4,7 @@ import { todayIso } from '../utils/date'
 import { readJson, writeJson } from './localStore'
 import { migrateLegacyShifts } from './shiftsMigration'
 import type { LegacyDayKind } from './shiftsMigration'
-import { isDayEntry, isIsoDate, isLegacyDayKind, isObject, toDayEntry } from './validators'
+import { isDayEntry, isFillRecord, isIsoDate, isLegacyDayKind, isObject, toDayEntry, toFillRecord } from './validators'
 
 const KEY = 'planner.shifts'
 
@@ -38,8 +38,10 @@ export function loadShifts(): ShiftsData {
       days[date] = toDayEntry(entry)
     }
   }
-  if (hadTime) saveShifts({ days })
-  return { days }
+  // Последнее заполнение 2/2 (для «Отменить»). Испорченную запись просто не берём.
+  const data: ShiftsData = isFillRecord(stored.lastFill) ? { days, lastFill: toFillRecord(stored.lastFill) } : { days }
+  if (hadTime) saveShifts(data)
+  return data
 }
 
 export function saveShifts(data: ShiftsData): void {

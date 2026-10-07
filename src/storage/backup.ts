@@ -9,6 +9,7 @@ import { loadWeek, saveWeek } from './weekStorage'
 import { loadHabits, saveHabits } from './habitsStorage'
 import { migrateLegacyShifts } from './shiftsMigration'
 import {
+  isFillRecord,
   isHabitsData,
   isLegacyShiftsData,
   isObject,
@@ -16,6 +17,7 @@ import {
   isTransaction,
   isWeekData,
   toDayEntry,
+  toFillRecord,
 } from './validators'
 
 // Метка «это бэкап именно нашего приложения».
@@ -160,6 +162,9 @@ export function parseBackupData(parsed: unknown): BackupFile {
     shifts = {
       days: Object.fromEntries(Object.entries(parsed.shifts.days).map(([date, entry]) => [date, toDayEntry(entry)])),
     }
+    // Последнее заполнение 2/2 — необязательное поле (есть не во всех бэкапах).
+    const lastFill: unknown = (parsed.shifts as { lastFill?: unknown }).lastFill
+    if (isFillRecord(lastFill)) shifts.lastFill = toFillRecord(lastFill)
   }
 
   // Задачи недели — с v4.

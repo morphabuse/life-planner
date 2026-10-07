@@ -10,7 +10,7 @@ import { formatMoney } from '../money/format'
 import { ChevronLeft, ChevronRight, CircleAlert } from 'lucide-react'
 import { Button, Card } from '../../components/ui'
 import { todayIso, formatMonthTitle } from '../../utils/date'
-import { fillTwoTwo, findNextShift, monthStats, setDay } from './schedule'
+import { fillTwoTwo, findNextShift, monthStats, setDay, undoFill } from './schedule'
 import { NextShiftCard } from './NextShiftCard'
 import { MonthCalendar } from './MonthCalendar'
 import { DayEditor } from './DayEditor'
@@ -44,6 +44,13 @@ export function ShiftsTab() {
   // Помощник 2/2. Возвращает, сколько поставлено и пропущено, — для сообщения в форме.
   function fill(from: string, to: string) {
     const result = fillTwoTwo(data, from, to)
+    setData(result.data)
+    return result
+  }
+
+  // Отмена последнего заполнения: убирает только проставленные им смены.
+  function undo() {
+    const result = undoFill(data)
     setData(result.data)
     return result
   }
@@ -159,7 +166,7 @@ export function ShiftsTab() {
         />
       )}
 
-      <FillTwoTwoCard today={today} onFill={fill} />
+      <FillTwoTwoCard today={today} selected={selected} lastFill={data.lastFill} onFill={fill} onUndo={undo} />
     </section>
   )
 }

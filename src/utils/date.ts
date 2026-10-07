@@ -34,6 +34,16 @@ export function addDays(iso: string, n: number): string {
   return makeIso(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
 }
 
+// Сдвигает дату на n месяцев. Если такого числа в месяце нет (31 января + 1 месяц),
+// берётся последний день месяца (28/29 февраля).
+export function addMonths(iso: string, n: number): string {
+  const [year, month, day] = iso.split('-').map(Number)
+  const total = year * 12 + (month - 1) + n
+  const y = Math.floor(total / 12)
+  const m = total % 12
+  return makeIso(y, m, Math.min(day, daysInMonth(y, m)))
+}
+
 // Сколько дней от from до to (to раньше from — получится отрицательное число).
 export function daysBetween(from: string, to: string): number {
   return Math.round((isoToUtcMs(to) - isoToUtcMs(from)) / DAY_MS)

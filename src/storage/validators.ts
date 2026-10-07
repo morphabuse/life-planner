@@ -10,6 +10,7 @@ import type {
   SalarySplit,
   Transaction,
   ShiftsData,
+  FillRecord,
   Task,
   WeekData,
   WeekReview,
@@ -133,6 +134,22 @@ export function isDayEntry(value: unknown): value is DayEntry {
 // Только статус — без старого поля time.
 export function toDayEntry(entry: DayEntry): DayEntry {
   return { status: entry.status }
+}
+
+// Запись о последнем заполнении 2/2 (lastFill).
+export function isFillRecord(value: unknown): value is FillRecord {
+  return (
+    isObject(value) &&
+    isIsoDate(value.from) &&
+    isIsoDate(value.to) &&
+    Array.isArray(value.dates) &&
+    value.dates.every(isIsoDate)
+  )
+}
+
+// Только нужные поля записи — лишнее отбрасываем.
+export function toFillRecord(fill: FillRecord): FillRecord {
+  return { from: fill.from, to: fill.to, dates: [...fill.dates] }
 }
 
 export function isShiftsData(value: unknown): value is ShiftsData {
