@@ -15,7 +15,7 @@ html {
 body {
   margin: 0;
   color: var(--color-text);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: var(--text-base);
   line-height: var(--leading-normal);
   /* Цифры одинаковой ширины: суммы и даты в столбик не «пляшут». */
@@ -36,13 +36,12 @@ p {
   margin: 0;
 }
 
-/* Заголовки — пиксельный шрифт. */
+/* Заголовки — Manrope 800. */
 h1,
 h2,
 h3 {
-  font-family: var(--font-display);
   line-height: var(--leading-tight);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-extrabold);
 }
 
 button,

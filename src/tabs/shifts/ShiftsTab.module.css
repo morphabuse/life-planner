@@ -28,9 +28,8 @@
 
 .nextDate {
   margin-bottom: var(--space-1);
-  font-family: var(--font-display);
   font-size: var(--text-lg);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-extrabold);
   line-height: var(--leading-tight);
 }
 
@@ -49,7 +48,7 @@
 }
 
 .weekday {
-  color: var(--color-text-subtle);
+  color: var(--color-text-muted);
   font-size: var(--text-xs);
   font-weight: var(--weight-medium);
   letter-spacing: var(--caps-tracking);
@@ -62,13 +61,12 @@
   font-weight: var(--weight-semibold);
 }
 
-/* Подпись отметки в клетке — мелко, капсом (без разрядки, чтобы «ОТРАБОТАЛ» влезал). */
+/* Подпись отметки в клетке. */
 .dayTag {
   max-width: 100%;
   overflow: hidden;
   font-size: var(--text-xs);
   text-overflow: ellipsis;
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
@@ -80,9 +78,7 @@
   padding: 0;
   color: var(--color-text-muted);
   font-size: var(--text-xs);
-  letter-spacing: var(--caps-tracking);
   list-style: none;
-  text-transform: uppercase;
 }
 
 .legend li {
@@ -113,17 +109,14 @@
 
 .stats .caption {
   font-size: var(--text-xs);
-  letter-spacing: var(--caps-tracking);
-  text-transform: uppercase;
 }
 
 .statValue {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-family: var(--font-display);
   font-size: var(--text-xl);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-extrabold);
   line-height: var(--leading-tight);
 }
 

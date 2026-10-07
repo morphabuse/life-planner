@@ -10,8 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@fontsource/jetbrains-mono": "^5.3.0",
-    "@fontsource/pixelify-sans": "^5.3.0",
+    "@fontsource/manrope": "^5.3.0",
     "@supabase/supabase-js": "^2.117.2",
     "lucide-react": "^1.52.0",
     "pdfjs-dist": "^6.4.299",
