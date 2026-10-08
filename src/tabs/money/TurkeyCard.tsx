@@ -1,5 +1,6 @@
 // Режим «Турция»: сколько накоплено (рост счёта «Турция» с даты старта), сколько осталось,
 // прогноз «Успеваю ли» и из чего он сложился.
+import type { ReactNode } from 'react'
 import { Card, ProgressBar } from '../../components/ui'
 import type { MoneySettings } from '../../types'
 import { formatDayShort } from '../../utils/date'
@@ -13,9 +14,10 @@ interface Props {
   forecast: TurkeyForecast
   settings: MoneySettings
   hasAccount: boolean // известно ли хоть что-то о счёте «Турция»
+  actions?: ReactNode // кнопки справа от заголовка («Сверить»)
 }
 
-export function TurkeyCard({ forecast, settings, hasAccount }: Props) {
+export function TurkeyCard({ forecast, settings, hasAccount, actions }: Props) {
   const { goal, split, shiftPay, shiftsPerMonth } = settings
   const { progress, daysLeft } = forecast
   const shiftsLeft = progress.left > 0 ? shiftsToGoal(progress.left, settings) : 0
@@ -34,6 +36,7 @@ export function TurkeyCard({ forecast, settings, hasAccount }: Props) {
     <Card
       title={goal.title}
       subtitle={`Цель ${formatMoney(goal.amount)} к ${formatDate(goal.deadline)} · считаю с ${formatDate(goal.start)}`}
+      actions={actions}
     >
       <div className={styles.stats}>
         <div>
@@ -64,7 +67,7 @@ export function TurkeyCard({ forecast, settings, hasAccount }: Props) {
           ? `Рост счёта «${goal.title}» с ${formatDate(goal.start)}, проценты — в плюс` +
             (progress.asOf ? ` · остаток известен по ${formatDate(progress.asOf)}` : '') +
             ' · отмеченные «Перевёл» доли учтены сразу.'
-          : `Счёт «${goal.title}» ещё не знаком: загрузи его выписку или введи остаток в настройках. Пока считаются только доли, отмеченные «Перевёл».`}
+          : `Счёт «${goal.title}» ещё не знаком: нажми «Сверить» и выбери скриншот банка или загрузи выписку. Пока считаются только доли, отмеченные «Перевёл».`}
       </p>
 
       <ForecastPhrase forecast={forecast} />

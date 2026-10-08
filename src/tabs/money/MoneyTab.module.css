@@ -620,3 +620,108 @@
   align-items: center;
   gap: var(--space-2) var(--space-3);
 }
+
+/* ---------- Сверка остатков по скриншоту ---------- */
+
+/* «Можно потратить» и рядом — когда сверял. */
+.spendableRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-4);
+}
+
+.reconciledAt {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+/* Мягкая плашка «Давно не сверял — Сверить»: без тревожного цвета, просто напоминание. */
+.stale {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
+  background: var(--color-surface-muted);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-full);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.reconcileProgress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-6) 0;
+  font-weight: var(--weight-semibold);
+  text-align: center;
+}
+
+.reconcileRows {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+}
+
+/* Строка «счёт — сумма»: не ниже 44 px, сумма справа. */
+.reconcileRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: calc(var(--control-height-touch) + var(--space-4));
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.reconcileRow:first-child {
+  border-top: none;
+}
+
+.reconcileName {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  font-weight: var(--weight-semibold);
+}
+
+/* Сумма — кнопка: нажал — исправить вручную. */
+.reconcileAmount {
+  min-height: var(--control-height-touch);
+  padding: 0 var(--space-2);
+  background: transparent;
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--text-md);
+  font-weight: var(--weight-extrabold);
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.reconcileAmount:hover {
+  border-color: var(--color-border-strong);
+}
+
+.reconcileInput {
+  width: calc(var(--space-12) * 3); /* 144 px — влезает «12 345,67» */
+  height: var(--control-height-touch);
+  text-align: right;
+}
+
+/* Одна большая кнопка «Всё верно» во всю ширину. */
+.reconcileConfirm {
+  width: 100%;
+}
+
+/* Поле названия счёта в настройках сверки. */
+.nameInput {
+  flex: 1;
+  min-width: calc(var(--space-12) * 3);
+  height: var(--control-height-sm);
+  font-size: var(--text-sm);
+}

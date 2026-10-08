@@ -8,15 +8,21 @@
 // через логику других вкладок. Смены только читаем — кроме одного случая: ввёл доход
 // за неотмеченный день — он отмечается «Смена» (как во вкладке «Деньги»).
 import { useEffect, useState } from 'react'
-import type { EnvelopeKind, HabitsData, MoneyData, ShiftsData, WeekData } from '../../types'
+import type { BalanceKind, EnvelopeKind, HabitsData, MoneyData, ShiftsData, WeekData } from '../../types'
 import { loadWeek, saveWeek } from '../../storage/weekStorage'
 import { loadShifts, saveShifts } from '../../storage/shiftsStorage'
 import { loadMoney, saveMoney } from '../../storage/moneyStorage'
 import { loadHabits, saveHabits } from '../../storage/habitsStorage'
-import { formatDayLong, todayIso } from '../../utils/date'
+import { formatDayLong, nowStamp, todayIso } from '../../utils/date'
 import { addTask, toggleTask } from '../week/weekLogic'
 import { turkeyForecast } from '../money/turkeyLogic'
-import { addManualIncome, defaultIncomeShiftDate, markShiftsByIncome, toggleTransfer } from '../money/moneyLogic'
+import {
+  addManualIncome,
+  defaultIncomeShiftDate,
+  markShiftsByIncome,
+  saveReconciled,
+  toggleTransfer,
+} from '../money/moneyLogic'
 import { bestStreak, shiftFocus, todayStatus, weekShiftStats } from './todayLogic'
 import { TodayStatusCard } from './TodayStatusCard'
 import { TodayMoneyCard } from './TodayMoneyCard'
@@ -45,7 +51,14 @@ export function TodayTab() {
 
   // Галочка «Перевёл» — та же отметка, что во вкладке «Деньги».
   function handleToggleTransfer(shiftDate: string, kind: EnvelopeKind) {
-    setMoney((prev) => toggleTransfer(prev, shiftDate, kind))
+    const at = nowStamp() // когда отметил — для сверки остатков
+    setMoney((prev) => toggleTransfer(prev, shiftDate, kind, at))
+  }
+
+  // Сверка остатков по скриншоту — та же, что во вкладке «Деньги».
+  function handleReconcile(balances: Partial<Record<BalanceKind, number>>) {
+    const at = nowStamp()
+    setMoney((prev) => saveReconciled(prev, balances, at))
   }
 
   const title = formatDayLong(today)
@@ -70,6 +83,8 @@ export function TodayTab() {
             incomeDate={defaultIncomeShiftDate(money, shifts, today)}
             onAddIncome={addIncome}
             onToggleTransfer={handleToggleTransfer}
+            now={nowStamp()}
+            onReconcile={handleReconcile}
           />
         </div>
 

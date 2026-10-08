@@ -1,22 +1,24 @@
 // Настройки денег (открываются шестерёнкой): как делить доход по счетам, цена смены,
-// смен в месяц по плану, цель «Турция» и какой счёт какой.
+// смен в месяц по плану, цель «Турция», какой счёт какой и названия счетов для сверки по скриншоту.
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Button, Input, Select } from '../../components/ui'
-import type { AccountKind, MoneyData, MoneySettings } from '../../types'
+import type { AccountKind, MoneyData, MoneySettings, ReconcileName } from '../../types'
 import { ACCOUNT_LABELS } from './moneyLogic'
 import { formatDate } from './format'
+import { ReconcileNamesForm } from './reconcile/ReconcileNamesForm'
 import styles from './MoneyTab.module.css'
 
 interface Props {
   money: MoneyData
   onSave: (settings: Pick<MoneySettings, 'split' | 'shiftPay' | 'shiftsPerMonth' | 'goal'>) => void
   onAccountKind: (account: string, kind: AccountKind) => void
+  onReconcileNames: (names: ReconcileName[]) => void
 }
 
 const KIND_OPTIONS: AccountKind[] = ['card', 'life', 'turkey', 'clothes', 'other']
 
-export function MoneySettingsForm({ money, onSave, onAccountKind }: Props) {
+export function MoneySettingsForm({ money, onSave, onAccountKind, onReconcileNames }: Props) {
   const { settings } = money
   const [life, setLife] = useState(String(settings.split.life))
   const [turkey, setTurkey] = useState(String(settings.split.turkey))
@@ -115,6 +117,8 @@ export function MoneySettingsForm({ money, onSave, onAccountKind }: Props) {
           </ul>
         )}
       </div>
+
+      <ReconcileNamesForm names={settings.reconcileNames} onSave={onReconcileNames} />
     </>
   )
 }

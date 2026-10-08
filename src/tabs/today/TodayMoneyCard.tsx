@@ -4,12 +4,14 @@
 // Форма и раскладка — те же компоненты, что во вкладке «Деньги» (IncomeForm, IncomeShares).
 import { useState } from 'react'
 import { Button, Card } from '../../components/ui'
-import type { EnvelopeKind, MoneyData } from '../../types'
+import type { BalanceKind, EnvelopeKind, MoneyData } from '../../types'
 import { formatDayShort } from '../../utils/date'
 import { ENVELOPE_TO, confirmedShares, pendingTransfers, shiftIncomes, spendable } from '../money/moneyLogic'
 import type { TurkeyForecast } from '../money/turkeyLogic'
 import { ForecastPhrase } from '../money/ForecastPhrase'
 import { IncomeButton } from '../money/IncomeButton'
+import { ReconcileButton } from '../money/reconcile/ReconcileButton'
+import { ReconcileStatus } from '../money/reconcile/ReconcileStatus'
 import { IncomeForm } from '../money/IncomeForm'
 import { IncomeShares } from '../money/IncomeShares'
 import { formatMoney, formatMoneyExact } from '../money/format'
@@ -22,9 +24,11 @@ interface Props {
   incomeDate: string // дата смены по умолчанию для «Получил за смену»
   onAddIncome: (shiftDate: string, rub: number) => void
   onToggleTransfer: (shiftDate: string, kind: EnvelopeKind) => void
+  now: string // 'YYYY-MM-DDTHH:MM' — для «давно не сверял»
+  onReconcile: (balances: Partial<Record<BalanceKind, number>>) => void
 }
 
-export function TodayMoneyCard({ money, forecast, today, incomeDate, onAddIncome, onToggleTransfer }: Props) {
+export function TodayMoneyCard({ money, forecast, today, incomeDate, onAddIncome, onToggleTransfer, now, onReconcile }: Props) {
   const [formOpen, setFormOpen] = useState(false)
   // Смена, доход за которую только что ввели: под ней показываем раскладку по конвертам.
   const [addedDate, setAddedDate] = useState<string | null>(null)
@@ -45,11 +49,13 @@ export function TodayMoneyCard({ money, forecast, today, incomeDate, onAddIncome
       <Card
         compact
         title={`${money.settings.goal.title}: ${formatMoney(forecast.progress.saved)} из ${formatMoney(forecast.progress.target)}`}
+        subtitle={<ReconcileStatus money={money} today={today} now={now} onSave={onReconcile} compact />}
+        actions={<ReconcileButton money={money} today={today} onSave={onReconcile} />}
       >
         <ForecastPhrase forecast={forecast} className={styles.forecast} />
         <p className={styles.spendLine}>
           Можно потратить:{' '}
-          <span className={styles.spendValue}>{free ? formatMoney(free.rub) : '—'}</span>
+          <span className={styles.spendValue}>{free ? formatMoneyExact(free.rub) : '—'}</span>
           <span className={styles.caption}> · «Жизнь» + карта</span>
         </p>
 

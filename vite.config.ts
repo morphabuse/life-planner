@@ -1,6 +1,7 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { tesseractAssets } from './tesseractAssets.ts'
 
 // Адрес, по которому лежит сайт. Локально — корень '/'. На GitHub Pages сайт живёт
 // в подпапке '/life-planner/' — сборка в GitHub Actions передаёт её через BASE_PATH.
@@ -15,6 +16,8 @@ export default defineConfig({
   base,
   plugins: [
     react(),
+    // Распознавание скриншотов для сверки остатков: движок и языки — свои, в /tesseract/.
+    tesseractAssets(),
     // PWA: сайт можно установить на телефон как приложение и открывать без интернета.
     VitePWA({
       // 'prompt' — новая версия не включается сама: показываем плашку «Доступна новая версия»,
@@ -43,6 +46,16 @@ export default defineConfig({
         // воркер pdf.js (.mjs). Он весит ~1,3 МБ — поднимаем лимит с 2 до 3 МБ на файл.
         globPatterns: ['**/*.{js,mjs,css,html,svg,png,woff2}'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        // Файлы распознавания (движок ~4 МБ, языки ~6 МБ) не скачиваем заранее при установке —
+        // только при первой сверке. После этого они лежат в кэше и работают офлайн.
+        globIgnores: ['**/tesseract/**'],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.includes('/tesseract/'),
+            handler: 'CacheFirst',
+            options: { cacheName: 'tesseract', expiration: { maxEntries: 10 } },
+          },
+        ],
       },
     }),
   ],

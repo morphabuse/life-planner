@@ -23,6 +23,19 @@ export function todayIso(): string {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 }
 
+// Сейчас с точностью до минуты, местное время: '2026-10-08T12:21'.
+// Такие строки сравниваются как обычные строки (раньше < позже), как и даты.
+export function nowStamp(): string {
+  const now = new Date()
+  return `${todayIso()}T${pad(now.getHours())}:${pad(now.getMinutes())}`
+}
+
+// Сколько полных дней прошло от момента stamp до момента now (оба 'YYYY-MM-DDTHH:MM').
+export function daysSinceStamp(stamp: string, now: string): number {
+  const toMs = (s: string) => isoToUtcMs(s.slice(0, 10)) + Number(s.slice(11, 13)) * 3600000 + Number(s.slice(14, 16)) * 60000
+  return Math.floor((toMs(now) - toMs(stamp)) / DAY_MS)
+}
+
 // Собирает 'YYYY-MM-DD' из года, месяца (0–11, как в Date) и дня.
 export function makeIso(year: number, monthIndex: number, day: number): string {
   return `${year}-${pad(monthIndex + 1)}-${pad(day)}`

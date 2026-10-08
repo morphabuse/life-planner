@@ -1,11 +1,13 @@
 // Хранение данных «Денег»: настройки, операции из выписок, правила категорий, счета,
-// доходы за смены, отметки «Перевёл», введённые остатки.
+// доходы за смены, отметки «Перевёл», сверенные остатки.
 import type {
   AccountInfo,
   BalanceKind,
   BalanceSnapshot,
   MoneyData,
   MoneySettings,
+  ReconcileName,
+  Reconciled,
   TransferMarks,
   TurkeyGoal,
 } from '../types'
@@ -38,6 +40,13 @@ export const DEFAULT_MONEY_SETTINGS: MoneySettings = {
   goal: DEFAULT_GOAL,
   limits: { Кафе: 2000, Такси: 1000, Игры: 1500 },
   customCategories: [],
+  // Как счета называются в приложении Ozon Банка (меняется в настройках).
+  reconcileNames: [
+    { name: 'Одежда, уход за собой', kind: 'clothes' },
+    { name: 'свободные деньги', kind: 'life' },
+    { name: 'Турция', kind: 'turkey' },
+    { name: 'Основной счёт', kind: 'card' },
+  ],
 }
 
 export function emptyMoney(): MoneyData {
@@ -48,7 +57,7 @@ export function emptyMoney(): MoneyData {
     accounts: {},
     manualIncome: {},
     transfers: {},
-    manualBalances: {},
+    reconciled: {},
   }
 }
 
@@ -71,6 +80,21 @@ function readGoal(value: unknown, legacyAmount?: number, legacyTitle?: string): 
     start: isIsoDate(value.start) ? value.start : DEFAULT_GOAL.start,
     deadline: isIsoDate(value.deadline) ? value.deadline : DEFAULT_GOAL.deadline,
   }
+}
+
+const BALANCE_KINDS = ['card', 'life', 'turkey', 'clothes'] as const
+const isBalanceKind = (value: unknown): value is BalanceKind => BALANCE_KINDS.some((k) => k === value)
+
+// 'YYYY-MM-DDTHH:MM' — момент сверки или отметки «Перевёл».
+export function isStamp(value: unknown): value is string {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) && isIsoDate(value.slice(0, 10))
+}
+
+function readReconcileNames(value: unknown): ReconcileName[] {
+  if (!Array.isArray(value)) return DEFAULT_MONEY_SETTINGS.reconcileNames
+  return value.filter(
+    (n): n is ReconcileName => isObject(n) && typeof n.name === 'string' && n.name.trim() !== '' && isBalanceKind(n.kind),
+  )
 }
 
 function isSnapshot(value: unknown): value is BalanceSnapshot {
@@ -137,6 +161,7 @@ export function normalizeMoney(stored: unknown, legacyGoal?: { title?: unknown; 
     goal: readGoal(s.goal, legacyAmount, legacyTitle),
     limits,
     customCategories,
+    reconcileNames: readReconcileNames(s.reconcileNames),
   }
 
   const accounts: Record<string, AccountInfo> = {}
@@ -159,16 +184,28 @@ export function normalizeMoney(stored: unknown, legacyGoal?: { title?: unknown; 
     for (const [date, marks] of Object.entries(raw.transfers)) {
       if (!isIsoDate(date) || !isObject(marks)) continue
       const clean: TransferMarks = {}
-      for (const kind of ['life', 'turkey', 'clothes'] as const) if (marks[kind] === true) clean[kind] = true
+      // Отметка — время, когда отметил, или true у старых отметок без времени.
+      for (const kind of ['life', 'turkey', 'clothes'] as const) {
+        const mark = marks[kind]
+        if (mark === true || isStamp(mark)) clean[kind] = mark
+      }
       transfers[date] = clean
     }
   }
 
-  const manualBalances: Partial<Record<BalanceKind, BalanceSnapshot>> = {}
+  // Сверенные остатки. Старые «введённые вручную остатки» (manualBalances, только дата)
+  // переносим сюда со временем 23:59: раньше считалось, что операции этого дня уже в остатке.
+  const reconciled: Partial<Record<BalanceKind, Reconciled>> = {}
   if (isObject(raw.manualBalances)) {
-    for (const kind of ['card', 'life', 'turkey', 'clothes'] as const) {
+    for (const kind of BALANCE_KINDS) {
       const value = raw.manualBalances[kind]
-      if (isSnapshot(value)) manualBalances[kind] = value
+      if (isSnapshot(value)) reconciled[kind] = { at: `${value.date}T23:59`, kop: value.kop }
+    }
+  }
+  if (isObject(raw.reconciled)) {
+    for (const kind of BALANCE_KINDS) {
+      const value = raw.reconciled[kind]
+      if (isObject(value) && isStamp(value.at) && Number.isInteger(value.kop)) reconciled[kind] = { at: value.at, kop: value.kop as number }
     }
   }
 
@@ -179,7 +216,7 @@ export function normalizeMoney(stored: unknown, legacyGoal?: { title?: unknown; 
     accounts,
     manualIncome,
     transfers,
-    manualBalances,
+    reconciled,
   }
 }
 
@@ -191,7 +228,10 @@ export function loadMoney(): MoneyData {
   const legacyGoal = isObject(legacy) && isObject(legacy.goal) ? legacy.goal : undefined
 
   let data = normalizeMoney(stored, legacyGoal)
-  let changed = legacy !== null || (isObject(stored) && !isObject(isObject(stored.settings) ? stored.settings.goal : null))
+  let changed =
+    legacy !== null ||
+    (isObject(stored) && !isObject(isObject(stored.settings) ? stored.settings.goal : null)) ||
+    (isObject(stored) && 'manualBalances' in stored) // старые введённые остатки → сверка
 
   // Старые операции чиним (подробности — в moneyMigration.ts):
   //   1) операции, загруженные старой версией разбора выписок;

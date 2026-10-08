@@ -17,7 +17,7 @@ import type {
 import { loadMoney, saveMoney } from '../../storage/moneyStorage'
 import { loadShifts, saveShifts } from '../../storage/shiftsStorage'
 import { Button, Card } from '../../components/ui'
-import { addDays, todayIso, formatMonthTitle } from '../../utils/date'
+import { addDays, nowStamp, todayIso, formatMonthTitle } from '../../utils/date'
 import {
   ACCOUNT_LABELS,
   addManualIncome,
@@ -35,6 +35,7 @@ import {
   monthPrefix,
   removeManualIncome,
   removeSavingsCopies,
+  saveReconciled,
   shiftIncomes,
   spendingCategories,
   statementOperations,
@@ -44,6 +45,7 @@ import { turkeyForecast } from './turkeyLogic'
 import type { ParsedStatement } from './statement/parseStatement'
 import { TurkeyCard } from './TurkeyCard'
 import { BalancesCard } from './BalancesCard'
+import { ReconcileButton } from './reconcile/ReconcileButton'
 import { IncomeCard } from './IncomeCard'
 import { TransferCheckCard } from './TransferCheckCard'
 import { MonthAnalyticsCard } from './MonthAnalyticsCard'
@@ -155,8 +157,10 @@ export function MoneyTab() {
     setShifts((prev) => markShiftsByIncome(prev, [shiftDate]).shifts)
   }
 
-  function saveBalances(balances: Partial<Record<BalanceKind, BalanceSnapshot>>) {
-    setMoney((prev) => ({ ...prev, manualBalances: { ...prev.manualBalances, ...balances } }))
+  // Сверка: сверенные остатки (копейки) с текущим временем — главный источник правды.
+  function saveReconcile(balances: Partial<Record<BalanceKind, number>>) {
+    const at = nowStamp()
+    setMoney((prev) => saveReconciled(prev, balances, at))
   }
 
   // ---------- Категории и настройки ----------
@@ -242,7 +246,14 @@ export function MoneyTab() {
             />
           }
         >
-          <MoneySettingsForm money={money} onSave={saveSettings} onAccountKind={setAccountKind} />
+          <MoneySettingsForm
+            money={money}
+            onSave={saveSettings}
+            onAccountKind={setAccountKind}
+            onReconcileNames={(reconcileNames) =>
+              setMoney((prev) => ({ ...prev, settings: { ...prev.settings, reconcileNames } }))
+            }
+          />
         </Card>
       )}
 
@@ -250,13 +261,12 @@ export function MoneyTab() {
         <TurkeyCard
           forecast={turkeyForecast(money, shifts, today)}
           settings={money.settings}
-          hasAccount={
-            accountList.some((a) => a.kind === 'turkey') || money.manualBalances.turkey !== undefined
-          }
+          hasAccount={accountList.some((a) => a.kind === 'turkey') || money.reconciled.turkey !== undefined}
+          actions={<ReconcileButton money={money} today={today} onSave={saveReconcile} />}
         />
       ) : (
         <>
-          <BalancesCard money={money} today={today} onSaveBalances={saveBalances} />
+          <BalancesCard money={money} today={today} now={nowStamp()} onReconcile={saveReconcile} />
 
           <div className={styles.monthNav}>
             <div className={styles.monthHeading}>
@@ -278,7 +288,10 @@ export function MoneyTab() {
             defaultDate={defaultIncomeShiftDate(money, shifts, today)}
             onAddManual={handleAddIncome}
             onRemoveManual={(date) => setMoney((prev) => removeManualIncome(prev, date))}
-            onToggleTransfer={(date, kind) => setMoney((prev) => toggleTransfer(prev, date, kind))}
+            onToggleTransfer={(date, kind) => {
+              const at = nowStamp() // когда отметил — для сверки остатков
+              setMoney((prev) => toggleTransfer(prev, date, kind, at))
+            }}
           />
 
           {hasData ? (

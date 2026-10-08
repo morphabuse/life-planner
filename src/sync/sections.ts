@@ -68,7 +68,7 @@ export function hasData(s: Partial<Sections>): boolean {
       (m.transactions.length > 0 ||
         Object.keys(m.manualIncome).length > 0 ||
         Object.keys(m.accounts).length > 0 ||
-        Object.keys(m.manualBalances).length > 0)) ||
+        Object.keys(m.reconciled).length > 0)) ||
       (s.shifts && Object.keys(s.shifts.days).length > 0) ||
       (s.week && (Object.keys(s.week.tasks).length > 0 || Object.keys(s.week.reviews).length > 0)) ||
       (s.habits && Object.values(s.habits.marks).some((dates) => dates.length > 0)),

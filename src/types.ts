@@ -28,6 +28,14 @@ export interface MoneySettings {
   goal: TurkeyGoal
   limits: Record<string, number> // лимиты трат по категориям: { 'Кафе': 2000, ... }
   customCategories: string[] // свои категории, добавленные вручную
+  // Сверка по скриншоту: как счёт называется в приложении банка → какой это счёт у меня.
+  reconcileNames: ReconcileName[]
+}
+
+// Название счёта на скриншоте банка («свободные деньги») → какой это счёт («Жизнь»).
+export interface ReconcileName {
+  name: string
+  kind: BalanceKind
 }
 
 // Операция из выписки (любого учитываемого счёта: карты или конверта).
@@ -71,7 +79,18 @@ export interface AccountInfo {
 }
 
 // Отметки «Перевёл» для дохода смены: какие доли уже переведены на свои счета.
-export type TransferMarks = Partial<Record<EnvelopeKind, boolean>>
+// Значение — когда отметил ('YYYY-MM-DDTHH:MM', местное время): нужно, чтобы понять,
+// была ли отметка после сверки остатков. true — старая отметка без времени (считается
+// сделанной раньше любой сверки).
+export type TransferMark = true | string
+export type TransferMarks = Partial<Record<EnvelopeKind, TransferMark>>
+
+// Сверенный остаток счёта: сколько было на счёте в момент сверки (по скриншоту банка
+// или введено вручную). Главный источник правды: остаток дальше считается от него.
+export interface Reconciled {
+  at: string // 'YYYY-MM-DDTHH:MM' — когда сверил (местное время)
+  kop: number
+}
 
 export interface MoneyData {
   settings: MoneySettings
@@ -84,8 +103,9 @@ export interface MoneyData {
   manualIncome: Record<string, number>
   // Галочки «Перевёл»: дата смены → какие доли её дохода переведены.
   transfers: Record<string, TransferMarks>
-  // Остатки, введённые вручную (когда выписки нет или она старая).
-  manualBalances: Partial<Record<BalanceKind, BalanceSnapshot>>
+  // Сверенные остатки по счетам (у каждого счёта — своё время сверки: карта может
+  // остаться с прошлой сверки). Старые «введённые вручную остатки» переносятся сюда.
+  reconciled: Partial<Record<BalanceKind, Reconciled>>
 }
 
 // Тип выписки, определённый по её содержимому: карта или накопительный счёт.

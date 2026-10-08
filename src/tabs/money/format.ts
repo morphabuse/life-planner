@@ -45,6 +45,11 @@ export function sinceLabel(from: string): string {
   return `считается с ${from.slice(8, 10)}.${from.slice(5, 7)}`
 }
 
+// '2026-10-08T12:21' → '08.10, 12:21' — для подписи «сверено 08.10, 12:21».
+export function formatStamp(stamp: string): string {
+  return `${stamp.slice(8, 10)}.${stamp.slice(5, 7)}, ${stamp.slice(11, 16)}`
+}
+
 // '2026-10-04' → '04.10.2026'
 export function formatDate(isoDate: string): string {
   const [year, month, day] = isoDate.split('-')

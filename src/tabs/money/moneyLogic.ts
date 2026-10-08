@@ -280,11 +280,12 @@ export function removeManualIncome(money: MoneyData, shiftDate: string): MoneyDa
   return { ...money, manualIncome }
 }
 
-// Ставит или снимает галочку «Перевёл» у доли дохода.
-export function toggleTransfer(money: MoneyData, shiftDate: string, kind: EnvelopeKind): MoneyData {
+// Ставит или снимает галочку «Перевёл» у доли дохода. at — когда отметил
+// ('YYYY-MM-DDTHH:MM'): по нему видно, была ли отметка после сверки остатков.
+export function toggleTransfer(money: MoneyData, shiftDate: string, kind: EnvelopeKind, at: string): MoneyData {
   const marks = { ...money.transfers[shiftDate] }
   if (marks[kind]) delete marks[kind]
-  else marks[kind] = true
+  else marks[kind] = at
   return { ...money, transfers: { ...money.transfers, [shiftDate]: marks } }
 }
 
@@ -392,25 +393,6 @@ export function pendingTransfers(money: MoneyData): PendingTransfer[] {
   return result
 }
 
-// Доли, отмеченные «Перевёл», но ещё не видные в выписке счёта: деньги уже на счёте,
-// а в остатке по выписке их нет — прибавляем к остатку сами. Как только выписка покажет
-// перевод (confirmedShares), доля сюда больше не попадает и учитывается уже в остатке —
-// без двойного счёта. Если остаток счёта введён вручную позже, чем пришёл доход, — доля уже в нём.
-// Доля относится к дню смены (shiftDate).
-export function unconfirmedShares(money: MoneyData, kind: EnvelopeKind): PendingTransfer[] {
-  const confirmed = confirmedShares(money)
-  const manual = money.manualBalances[kind]
-  const result: PendingTransfer[] = []
-  for (const income of envelopeIncomes(money)) {
-    if (!money.transfers[income.shiftDate]?.[kind]) continue
-    if (confirmed.has(shareKey(income.shiftDate, kind))) continue
-    if (manual && manual.date >= income.paidDate) continue
-    const kop = splitIncome(income.amountKop, money.settings.split)[kind]
-    if (kop > 0) result.push({ shiftDate: income.shiftDate, kind, kop })
-  }
-  return result
-}
-
 export interface TransferCheck {
   // none        — выписки этого счёта нет
   // before      — выписка кончается раньше старта, сверять нечего
@@ -451,9 +433,52 @@ export function transferCheck(money: MoneyData, kind: EnvelopeKind): TransferChe
 }
 
 // ---------- Остатки на счетах ----------
+//
+// Главный источник правды — СВЕРКА (остаток со скриншота банка или введённый вручную,
+// с датой и временем, money.reconciled). От неё остаток считается так:
+//   сверенная сумма
+//   + операции из выписок по этому счёту ПОСЛЕ момента сверки (по дате и времени операции)
+//   + для конвертов: доли, отмеченные «Перевёл» ПОСЛЕ сверки, которых выписка ещё не видит
+//   + для карты: доходы, введённые вручную, которые пришли ПОСЛЕ сверки (выписки по ним нет),
+//     − доли, отмеченные «Перевёл» после сверки (деньги ушли с карты), пока выписка карты
+//       не дошла до дня отметки — тогда перевод уже есть в её операциях.
+// Всё, что было ДО сверки, уже в сверенной сумме — выписки за это время на остаток не влияют
+// (без двойного счёта). Выписки дальше нужны в основном для трат по категориям.
+//
+// Для дат раньше сверки (например, остаток на дату старта «Турции») остаток — по выпискам,
+// как раньше: ближайший остаток из выписки ± операции + отмеченные, но не подтверждённые доли.
 
-// Остаток одного счёта на конец дня date, в копейках. Берём ближайший известный остаток
-// из выписки (до этой даты или, если нет, после) и добавляем/вычитаем операции между ними.
+// Момент операции выписки с точностью до минуты: '2026-10-08T12:21' — чтобы сравнить со сверкой.
+function txStamp(tx: Transaction): string {
+  return `${tx.date}T${tx.time.slice(0, 5)}`
+}
+
+// Когда отмечена «Перевёл» доля (kind) дохода смены: время отметки, '' — старая отметка
+// без времени (считается сделанной до любой сверки), null — не отмечена.
+function markedAt(money: MoneyData, shiftDate: string, kind: EnvelopeKind): string | null {
+  const mark = money.transfers[shiftDate]?.[kind]
+  if (!mark) return null
+  return mark === true ? '' : mark
+}
+
+// Доли, отмеченные «Перевёл», но ещё не видные в выписке счёта (до сверки): деньги уже
+// на счёте, а в остатке по выписке их нет — прибавляем к остатку сами. Как только выписка
+// покажет перевод (confirmedShares), доля сюда не попадает — без двойного счёта.
+// Доля относится к дню смены (shiftDate).
+export function unconfirmedShares(money: MoneyData, kind: EnvelopeKind): PendingTransfer[] {
+  const confirmed = confirmedShares(money)
+  const result: PendingTransfer[] = []
+  for (const income of envelopeIncomes(money)) {
+    if (markedAt(money, income.shiftDate, kind) === null) continue
+    if (confirmed.has(shareKey(income.shiftDate, kind))) continue
+    const kop = splitIncome(income.amountKop, money.settings.split)[kind]
+    if (kop > 0) result.push({ shiftDate: income.shiftDate, kind, kop })
+  }
+  return result
+}
+
+// Остаток одного счёта на конец дня date по выпискам, в копейках. Берём ближайший известный
+// остаток из выписки (до этой даты или, если нет, после) и добавляем/вычитаем операции между ними.
 // null — о счёте ничего не известно.
 function accountBalanceAt(money: MoneyData, number: string, date: string): number | null {
   const info = money.accounts[number]
@@ -471,30 +496,40 @@ function accountBalanceAt(money: MoneyData, number: string, date: string): numbe
   return null
 }
 
-// До какой даты известно о счетах этого вида: конец выписки или дата введённого остатка.
-export function coverage(money: MoneyData, kind: BalanceKind): string | null {
+// По какую дату есть выписки счетов этого вида (конец последней выписки).
+function statementUntil(money: MoneyData, kind: BalanceKind): string {
   let latest = ''
   for (const info of Object.values(money.accounts)) {
     if (info.kind !== kind) continue
     if (info.periodEnd && info.periodEnd > latest) latest = info.periodEnd
     for (const s of info.balances) if (s.date > latest) latest = s.date
   }
-  const manual = money.manualBalances[kind]
-  if (manual && manual.date > latest) latest = manual.date
+  return latest
+}
+
+// До какой даты известно о счетах этого вида: конец выписки или дата сверки.
+export function coverage(money: MoneyData, kind: BalanceKind): string | null {
+  let latest = statementUntil(money, kind)
+  const rec = money.reconciled[kind]
+  if (rec && rec.at.slice(0, 10) > latest) latest = rec.at.slice(0, 10)
   return latest || null
 }
 
 export interface KindBalance {
   kop: number
-  asOf: string // по какую дату известно
-  manual: boolean // введено вручную (а не из выписки)
-  pendingKop: number // из них — отмеченные «Перевёл» доли, которых выписка ещё не видит
-  onlyPending: boolean // выписки и введённого остатка нет — известны только отмеченные доли
+  asOf: string // по какую дату известно (для остатка по выписке)
+  reconciledAt: string | null // остаток считается от сверки: когда сверил ('YYYY-MM-DDTHH:MM')
+  sinceKop: number // после сверки: сколько добавилось (минус — убавилось) к сверенной сумме
+  pendingKop: number // до сверки: из них — отмеченные «Перевёл» доли, которых выписка ещё не видит
+  onlyPending: boolean // нет ни выписки, ни сверки — известны только отмеченные доли
 }
 
-// Остаток на счетах этого вида на конец дня date: по выпискам (или введённый вручную)
-// + для счетов-конвертов отмеченные «Перевёл» доли, которых выписка ещё не видит.
+// Остаток на счетах этого вида на конец дня date.
 export function balanceOf(money: MoneyData, kind: BalanceKind, date: string): KindBalance | null {
+  const rec = money.reconciled[kind]
+  if (rec && rec.at.slice(0, 10) <= date) return reconciledBalance(money, kind, rec.at, rec.kop, date)
+
+  // До сверки (или сверки нет) — по выпискам.
   const base = statementBalanceOf(money, kind, date)
   const pendingKop =
     kind === 'card'
@@ -502,40 +537,88 @@ export function balanceOf(money: MoneyData, kind: BalanceKind, date: string): Ki
       : unconfirmedShares(money, kind)
           .filter((s) => s.shiftDate <= date)
           .reduce((sum, s) => sum + s.kop, 0)
-  if (!base) return pendingKop > 0 ? { kop: pendingKop, asOf: date, manual: false, pendingKop, onlyPending: true } : null
-  return { ...base, kop: base.kop + pendingKop, pendingKop, onlyPending: false }
+  const empty = { reconciledAt: null, sinceKop: 0 }
+  if (!base) return pendingKop > 0 ? { kop: pendingKop, asOf: date, ...empty, pendingKop, onlyPending: true } : null
+  return { ...base, ...empty, kop: base.kop + pendingKop, pendingKop, onlyPending: false }
 }
 
-// Остаток только по данным счёта: выпискам или введённому вручную. Введённый вручную
-// главнее выписки, если он новее; операции после него (из следующих выписок) прибавляются.
-function statementBalanceOf(money: MoneyData, kind: BalanceKind, date: string): Omit<KindBalance, 'pendingKop' | 'onlyPending'> | null {
+// Остаток от сверки (см. правила в начале раздела).
+function reconciledBalance(money: MoneyData, kind: BalanceKind, at: string, recKop: number, date: string): KindBalance {
+  let since = 0
+
+  // 1. Операции выписок по этому счёту после момента сверки.
+  for (const tx of money.transactions) {
+    if (tx.date <= date && txStamp(tx) > at && kindOf(tx, money) === kind) since += tx.amount
+  }
+
+  const confirmed = confirmedShares(money)
+  const cardStatementUntil = statementUntil(money, 'card')
+  for (const income of shiftIncomes(money)) {
+    // 2. Карта: доход, введённый вручную (выписки по нему нет), пришёл после сверки.
+    //    Основная выплата приходит около 12:00 дня после смены.
+    const paidAt = `${income.paidDate}T12:00`
+    if (kind === 'card' && income.status === 'manual' && paidAt > at && income.paidDate <= date) {
+      since += income.amountKop
+    }
+    if (income.shiftDate < money.settings.goal.start || income.amountKop <= 0) continue // в конверты не идёт
+
+    // 3. Доли, отмеченные «Перевёл» после сверки.
+    const shares = splitIncome(income.amountKop, money.settings.split)
+    for (const env of ENVELOPES) {
+      const mark = markedAt(money, income.shiftDate, env)
+      if (!mark || mark <= at || mark.slice(0, 10) > date || shares[env] <= 0) continue
+      if (kind === env && !confirmed.has(shareKey(income.shiftDate, env))) since += shares[env]
+      // С карты доля ушла. Не вычитаем, если перевод уже виден: выписка карты дошла до дня
+      // отметки (перевод есть в её операциях) или выписка конверта показала его до сверки
+      // (тогда он уже в сверенной сумме карты).
+      const confirmedOn = confirmed.get(shareKey(income.shiftDate, env))
+      const seenBeforeReconcile = confirmedOn !== undefined && confirmedOn <= at.slice(0, 10)
+      if (kind === 'card' && cardStatementUntil < mark.slice(0, 10) && !seenBeforeReconcile) since -= shares[env]
+    }
+  }
+
+  return { kop: recKop + since, asOf: at.slice(0, 10), reconciledAt: at, sinceKop: since, pendingKop: 0, onlyPending: false }
+}
+
+// Остаток только по выпискам счетов этого вида на конец дня date.
+function statementBalanceOf(money: MoneyData, kind: BalanceKind, date: string): { kop: number; asOf: string } | null {
   const numbers = Object.entries(money.accounts)
     .filter(([, info]) => info.kind === kind)
     .map(([number]) => number)
 
   let kop = 0
   let known = false
-  let statementLatest = ''
   for (const number of numbers) {
     const b = accountBalanceAt(money, number, date)
     if (b !== null) {
       kop += b
       known = true
     }
-    const info = money.accounts[number]
-    if (info.periodEnd && info.periodEnd > statementLatest) statementLatest = info.periodEnd
-    for (const s of info.balances) if (s.date > statementLatest) statementLatest = s.date
-  }
-
-  const manual = money.manualBalances[kind]
-  if (manual && (!known || (manual.date >= statementLatest && manual.date <= date))) {
-    const later = money.transactions
-      .filter((t) => kindOf(t, money) === kind && t.date > manual.date && t.date <= date)
-      .reduce((s, t) => s + t.amount, 0)
-    return { kop: manual.kop + later, asOf: manual.date > date ? date : manual.date, manual: true }
   }
   if (!known) return null
-  return { kop, asOf: statementLatest && statementLatest < date ? statementLatest : date, manual: false }
+  const latest = statementUntil(money, kind)
+  return { kop, asOf: latest && latest < date ? latest : date }
+}
+
+// Последняя сверка накопительных счетов (главный экран «Ваши накопления»): самое
+// свежее время среди «Жизни», «Турции» и «Одежды». null — ещё не сверял.
+export function lastReconciledAt(money: MoneyData): string | null {
+  const stamps = ENVELOPES.map((k) => money.reconciled[k]?.at).filter((s): s is string => Boolean(s))
+  return stamps.length > 0 ? stamps.sort().at(-1)! : null
+}
+
+// Сверять пора, если с последней сверки прошло больше стольких дней.
+export const RECONCILE_STALE_DAYS = 7
+
+// Записывает сверенные остатки. balances — только те счета, которые сверены сейчас
+// (карта может остаться с прошлой сверки — её сюда не передают).
+export function saveReconciled(money: MoneyData, balances: Partial<Record<BalanceKind, number>>, at: string): MoneyData {
+  const reconciled = { ...money.reconciled }
+  for (const kind of BALANCE_KINDS) {
+    const kop = balances[kind]
+    if (kop !== undefined) reconciled[kind] = { at, kop }
+  }
+  return { ...money, reconciled }
 }
 
 // «Можно потратить» = остаток «Жизнь» + карта.
